@@ -1,0 +1,594 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Releva{% endblock %}
+
+{% block extra_head %}
+<style>
+.google-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.google-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.google-input-icon {
+    position: absolute;
+    left: 14px;
+    color: #64748b;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.google-search-input {
+    width: 100%;
+    padding: 12px 18px 12px 42px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    font-size: 0.95rem !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.google-search-input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.google-search-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+.google-search-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.google-search-item:hover,
+.google-search-item.active {
+    background-color: #f1f5f9;
+}
+
+.google-search-item .google-search-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.google-search-item:hover .google-search-icon,
+.google-search-item.active .google-search-icon {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.google-search-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.google-search-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.google-search-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.google-search-empty {
+    padding: 16px;
+    font-size: 0.9rem;
+    color: #64748b;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px;">
+
+    <!-- Mensajes y Alertas -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-box alert-{{ message.tags|default:'info' }}">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- 1. Tarjeta Información del Usuario -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+            <div>
+                <h2 class="card-title" style="margin: 0; font-size: 1.25rem;">Información del Usuario</h2>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Datos registrados en el sistema</span>
+            </div>
+            {% if user.is_superuser %}
+                <span class="badge" style="background: #fef3c7; color: #92400e;">Administrador</span>
+            {% else %}
+                <span class="badge" style="background: #dcfce7; color: #166534;">Usuario Activo</span>
+            {% endif %}
+        </div>
+
+        <div class="user-details-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <div class="detail-item" style="background: #f8fafc; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Nombre del Solicitante</span>
+                <strong style="font-size: 1.1rem; color: var(--text-primary);">{{ user.first_name|default:user.username }}</strong>
+            </div>
+
+            <div class="detail-item" style="background: #f8fafc; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Cargo</span>
+                <strong style="font-size: 1.1rem; color: var(--primary);">{{ profile.cargo|default:"No asignado" }}</strong>
+            </div>
+
+            <div class="detail-item" style="background: #f8fafc; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Número de Identificación</span>
+                <strong style="font-size: 1.1rem; color: var(--text-primary);">{{ user.username }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Tarjetas de Acceso Rápido a Páginas de Solicitudes -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 28px;">
+        <!-- Tarjeta Solicitudes Recibidas -->
+        <a href="{% url 'core:solicitudes_recibidas' %}" style="text-decoration: none; color: inherit;">
+            <div class="card" style="transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">Solicitudes Recibidas</span>
+                    {% if recibidas_pendientes > 0 %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">{{ recibidas_pendientes }} Pendientes</span>
+                    {% else %}
+                        <span class="badge" style="background: #f1f5f9; color: #475569;">Ver todo</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #2563eb; margin-top: 8px;">
+                    Ver Recibidas &rarr;
+                </div>
+            </div>
+        </a>
+
+        <!-- Tarjeta Solicitudes Enviadas -->
+        <a href="{% url 'core:solicitudes_enviadas' %}" style="text-decoration: none; color: inherit;">
+            <div class="card" style="transition: transform 0.15s ease, box-shadow 0.15s ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">Mis Solicitudes Enviadas</span>
+                    {% if enviadas_pendientes > 0 %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">{{ enviadas_pendientes }} Pendientes</span>
+                    {% else %}
+                        <span class="badge" style="background: #f1f5f9; color: #475569;">Ver todo</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 1.75rem; font-weight: 700; color: #059669; margin-top: 8px;">
+                    Ver Enviadas &rarr;
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- 3. Formulario para Crear Nueva Solicitud de Cambio -->
+    <div class="card">
+        <div style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+            <h2 class="card-title" style="margin: 0; font-size: 1.25rem;">Crear Solicitud de Cambio de Turno</h2>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Completa los datos del turno a relevar y la fecha de devolución</span>
+        </div>
+
+        <form method="POST" action="{% url 'core:crear_solicitud' %}" style="display: flex; flex-direction: column; gap: 20px;">
+            {% csrf_token %}
+
+            <!-- Buscador Estilo Google Omnibox -->
+            <div class="form-group google-search-container" style="margin-bottom: 0;">
+                <label for="reemplazo_search">Nombre del Reemplazo (Compañero)</label>
+                <div class="google-input-wrapper">
+                    <div class="google-input-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="reemplazo_search" 
+                        class="google-search-input" 
+                        placeholder="Escribe el nombre, cédula o cargo..." 
+                        autocomplete="off"
+                    />
+                    <div id="reemplazo_suggestions" class="google-search-dropdown" style="display: none;"></div>
+                </div>
+                <input type="hidden" name="reemplazo_cedula" id="reemplazo_cedula" required />
+                <input type="hidden" name="reemplazo_id" id="reemplazo_id" />
+            </div>
+
+            <!-- Bloque de Fechas y Jornadas -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <!-- Turno a Relevar -->
+                <div>
+                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #2563eb; margin-bottom: 12px;">Turno a Relevar</h3>
+                    
+                    <div class="form-group">
+                        <label for="fecha_turno">Fecha de Turno</label>
+                        <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" required />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="jornada">Jornada</label>
+                        <select name="jornada" id="jornada" class="form-input" required>
+                            {% for val, label in jornada_choices %}
+                                <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Devolución del Relevo -->
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <h3 style="font-size: 0.95rem; font-weight: 700; color: #059669; margin: 0;">Devolución del Turno</h3>
+                        <div id="div_opciones_12h" style="display: none;">
+                            <label style="font-size: 0.8rem; cursor: pointer; color: #1e40af; font-weight: 600;">
+                                <input type="checkbox" id="chk_dividir_12h" name="dividir_12h" value="1" style="vertical-align: middle; margin-right: 4px;" />
+                                Devolver en 2 turnos de 6h
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Devolución 1 -->
+                    <div class="form-group">
+                        <label for="fecha_devolucion" id="lbl_fecha_dev_1">Fecha de Devolución</label>
+                        <input type="date" name="fecha_devolucion" id="fecha_devolucion" class="form-input" required />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="jornada_devolucion" id="lbl_jornada_dev_1">Jornada de Devolución</label>
+                        <select name="jornada_devolucion" id="jornada_devolucion" class="form-input" required>
+                            {% for val, label in jornada_choices %}
+                                <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Devolución 2 (Opcional: para devolver 12 horas en 2 turnos de 6h a 1 o 2 personas) -->
+                    <div id="bloque_devolucion_2" style="display: none; padding-top: 14px; border-top: 1px dashed #cbd5e1; margin-top: 14px;">
+                        <div class="form-group google-search-container" style="margin-bottom: 14px;">
+                            <label for="reemplazo_search_2">Nombre del Reemplazo 2 (Para Devolución 2 - Opcional)</label>
+                            <div class="google-input-wrapper">
+                                <div class="google-input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="reemplazo_search_2" 
+                                    class="google-search-input" 
+                                    placeholder="Buscar por nombre, cédula o cargo (Si es otra persona)..." 
+                                    autocomplete="off"
+                                />
+                                <div id="reemplazo_suggestions_2" class="google-search-dropdown" style="display: none;"></div>
+                            </div>
+                            <input type="hidden" name="reemplazo_cedula_2" id="reemplazo_cedula_2" />
+                            <input type="hidden" name="reemplazo_id_2" id="reemplazo_id_2" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fecha_devolucion_2">Fecha de Devolución 2 (6 Hrs)</label>
+                            <input type="date" name="fecha_devolucion_2" id="fecha_devolucion_2" class="form-input" />
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="jornada_devolucion_2">Jornada de Devolución 2 (6 Hrs)</label>
+                            <select name="jornada_devolucion_2" id="jornada_devolucion_2" class="form-input">
+                                {% for val, label in jornada_choices %}
+                                    <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motivo -->
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="motivo">Motivo u Observaciones (Opcional)</label>
+                <textarea name="motivo" id="motivo" class="form-input" rows="2" placeholder="Ej. Inconveniente personal / cita médica..."></textarea>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    Enviar Solicitud
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function setupGoogleSearch(inputId, hiddenCedulaId, hiddenIdId, suggestionsBoxId) {
+        const searchInput = document.getElementById(inputId);
+        const hiddenCedula = document.getElementById(hiddenCedulaId);
+        const hiddenId = document.getElementById(hiddenIdId);
+        const suggestionsBox = document.getElementById(suggestionsBoxId);
+
+        if (!searchInput || !suggestionsBox) return;
+
+        let debounceTimer = null;
+        let activeIndex = -1;
+
+        function renderSuggestions(usuarios) {
+            suggestionsBox.innerHTML = '';
+            activeIndex = -1;
+
+            if (!usuarios || usuarios.length === 0) {
+                suggestionsBox.innerHTML = '<div class="google-search-empty">No se encontraron personas con ese criterio.</div>';
+                suggestionsBox.style.display = 'block';
+                return;
+            }
+
+            usuarios.forEach((u, index) => {
+                const item = document.createElement('div');
+                item.className = 'google-search-item';
+                item.setAttribute('data-index', index);
+                item.innerHTML = `
+                    <div class="google-search-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                    <div class="google-search-content">
+                        <div class="google-search-title">${escapeHtml(u.nombre)}</div>
+                        <div class="google-search-meta">
+                            Cédula: <strong>${escapeHtml(u.cedula)}</strong> &bull; Cargo: <span>${escapeHtml(u.cargo || 'Sin Cargo')}</span>
+                        </div>
+                    </div>
+                `;
+
+                item.addEventListener('click', function() {
+                    selectUser(u);
+                });
+
+                suggestionsBox.appendChild(item);
+            });
+
+            suggestionsBox.style.display = 'block';
+        }
+
+        function selectUser(u) {
+            hiddenCedula.value = u.cedula;
+            if (hiddenId) hiddenId.value = u.cedula;
+
+            const cargoTxt = u.cargo ? ` - ${u.cargo}` : '';
+            searchInput.value = `${u.nombre}${cargoTxt} (${u.cedula})`;
+            suggestionsBox.style.display = 'none';
+        }
+
+        searchInput.addEventListener('input', function() {
+            hiddenCedula.value = '';
+            if (hiddenId) hiddenId.value = '';
+
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                suggestionsBox.style.display = 'none';
+                suggestionsBox.innerHTML = '';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/usuarios/buscar/?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        renderSuggestions(data.usuarios || []);
+                    })
+                    .catch(err => {
+                        console.error('Error buscando usuarios:', err);
+                        suggestionsBox.style.display = 'none';
+                    });
+            }, 200);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            const items = suggestionsBox.querySelectorAll('.google-search-item');
+            if (!items || items.length === 0 || suggestionsBox.style.display === 'none') return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = (activeIndex + 1) % items.length;
+                highlightItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+                highlightItem(items);
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
+                e.preventDefault();
+                items[activeIndex].click();
+            } else if (e.key === 'Escape') {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function highlightItem(items) {
+            items.forEach((item, idx) => {
+                if (idx === activeIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2 && suggestionsBox.children.length > 0) {
+                suggestionsBox.style.display = 'block';
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    setupGoogleSearch('reemplazo_search', 'reemplazo_cedula', 'reemplazo_id', 'reemplazo_suggestions');
+    setupGoogleSearch('reemplazo_search_2', 'reemplazo_cedula_2', 'reemplazo_id_2', 'reemplazo_suggestions_2');
+
+    // Validación antes de enviar el formulario
+    const mainInput = document.getElementById('reemplazo_search');
+    const mainCedula = document.getElementById('reemplazo_cedula');
+    const form = mainInput ? mainInput.closest('form') : null;
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!mainCedula.value) {
+                e.preventDefault();
+                alert('Por favor selecciona una persona de las sugerencias del buscador principal.');
+                mainInput.focus();
+            }
+        });
+    }
+
+    // Lógica de equivalencia de tiempo y devolución dividida de 12 horas
+    const jornadaHoras = {
+        'N': 12, 'C': 12,
+        'C1': 11, 'C2': 11,
+        'M': 6, 'T': 6, 'ME': 6, 'TE': 6,
+        'T9': 8, 'H': 8, 'LC': 8,
+        'D': 0, 'L': 0
+    };
+
+    const jornadaSelect = document.getElementById('jornada');
+    const devolucionSelect = document.getElementById('jornada_devolucion');
+    const devolucionSelect2 = document.getElementById('jornada_devolucion_2');
+    const fechaDevolucion2 = document.getElementById('fecha_devolucion_2');
+
+    const divOpciones12h = document.getElementById('div_opciones_12h');
+    const chkDividir12h = document.getElementById('chk_dividir_12h');
+    const bloqueDevolucion2 = document.getElementById('bloque_devolucion_2');
+    const lblFechaDev1 = document.getElementById('lbl_fecha_dev_1');
+    const lblJornadaDev1 = document.getElementById('lbl_jornada_dev_1');
+
+    function actualizarJornadasDisponibles() {
+        if (!jornadaSelect || !devolucionSelect) return;
+        const valTurno = jornadaSelect.value;
+        const horasTurno = jornadaHoras[valTurno];
+
+        if (horasTurno === 12) {
+            divOpciones12h.style.display = 'block';
+        } else {
+            divOpciones12h.style.display = 'none';
+            if (chkDividir12h) chkDividir12h.checked = false;
+        }
+
+        const esDividido = (horasTurno === 12 && chkDividir12h && chkDividir12h.checked);
+
+        if (esDividido) {
+            bloqueDevolucion2.style.display = 'block';
+            if (lblFechaDev1) lblFechaDev1.textContent = 'Fecha de Devolución 1 (6 Hrs)';
+            if (lblJornadaDev1) lblJornadaDev1.textContent = 'Jornada de Devolución 1 (6 Hrs)';
+
+            if (fechaDevolucion2) fechaDevolucion2.required = true;
+            if (devolucionSelect2) devolucionSelect2.required = true;
+
+            filtrarSelectPorHoras(devolucionSelect, 6);
+            filtrarSelectPorHoras(devolucionSelect2, 6);
+        } else {
+            bloqueDevolucion2.style.display = 'none';
+            if (lblFechaDev1) lblFechaDev1.textContent = 'Fecha de Devolución';
+            if (lblJornadaDev1) lblJornadaDev1.textContent = 'Jornada de Devolución';
+
+            if (fechaDevolucion2) {
+                fechaDevolucion2.required = false;
+                fechaDevolucion2.value = '';
+            }
+            if (devolucionSelect2) {
+                devolucionSelect2.required = false;
+                devolucionSelect2.value = '';
+            }
+
+            filtrarSelectPorHoras(devolucionSelect, horasTurno);
+        }
+    }
+
+    function filtrarSelectPorHoras(selectElem, targetHoras) {
+        if (!selectElem) return;
+        let primerPermitido = null;
+        let coincidenciaActual = false;
+
+        Array.from(selectElem.options).forEach(opt => {
+            const h = jornadaHoras[opt.value];
+            if (h === targetHoras) {
+                opt.disabled = false;
+                opt.hidden = false;
+                if (!primerPermitido) primerPermitido = opt.value;
+                if (opt.value === selectElem.value) coincidenciaActual = true;
+            } else {
+                opt.disabled = true;
+                opt.hidden = true;
+            }
+        });
+
+        if (!coincidenciaActual && primerPermitido) {
+            selectElem.value = primerPermitido;
+        }
+    }
+
+    if (jornadaSelect) jornadaSelect.addEventListener('change', actualizarJornadasDisponibles);
+    if (chkDividir12h) chkDividir12h.addEventListener('change', actualizarJornadasDisponibles);
+
+    actualizarJornadasDisponibles();
+});
+</script>
+{% endblock %}

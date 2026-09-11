@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Releva{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=1.2">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="{% url 'core:home' %}" class="brand-logo">
+                <span class="logo-badge">R</span>
+                <span>Releva</span>
+            </a>
+
+            {% if user.is_authenticated %}
+                <nav class="nav-menu" style="display: flex; align-items: center; gap: 20px;">
+                    <a href="{% url 'core:home' %}" class="nav-link">Inicio</a>
+                    <a href="{% url 'core:solicitudes_recibidas' %}" class="nav-link">Solicitudes Recibidas</a>
+                    <a href="{% url 'core:solicitudes_enviadas' %}" class="nav-link">Solicitudes Enviadas</a>
+                </nav>
+
+                <div class="nav-user">
+                    <a href="{% url 'core:logout' %}" class="btn btn-outline">Cerrar Sesión</a>
+                </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            &copy; 2026 Releva. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Solicitudes Recibidas - Releva{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px;">
+
+    <!-- Mensajes y Alertas -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-box alert-{{ message.tags|default:'info' }}">
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border-color);">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--text-primary);">Solicitudes Recibidas</h1>
+                <span style="font-size: 0.875rem; color: var(--text-muted);">Peticiones de cambio de turno enviadas por tus compañeros</span>
+            </div>
+            <span class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 0.9rem; padding: 6px 12px;">
+                {{ recibidas_pendientes }} pendientes
+            </span>
+        </div>
+
+        {% if solicitudes_recibidas %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                {% for s in solicitudes_recibidas %}
+                    <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <strong style="font-size: 1.05rem; color: var(--text-primary);">
+                                    {{ s.solicitante.first_name|default:s.solicitante.username }}
+                                </strong>
+                                {% if s.estado == 'PENDIENTE' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">Pendiente</span>
+                                {% elif s.estado == 'ACEPTADA' %}
+                                    <span class="badge" style="background: #dcfce7; color: #166534;">Aceptada</span>
+                                {% elif s.estado == 'RECHAZADA' %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">Rechazada</span>
+                                {% else %}
+                                    <span class="badge" style="background: #f1f5f9; color: #475569;">Cancelada</span>
+                                {% endif %}
+                            </div>
+
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                                <strong>Cargo:</strong> {{ s.solicitante.profile.cargo|default:"No asignado" }} | <strong>Cédula:</strong> {{ s.solicitante.username }}<br>
+                                <span style="font-size: 0.8rem;">Fecha de Solicitud: {{ s.fecha_solicitud|date:"d/m/Y H:i" }}</span>
+                            </p>
+
+                            <div style="font-size: 0.9rem; background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color); line-height: 1.6;">
+                                <div style="margin-bottom: 6px;">
+                                    <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Turno a Relevar</span>
+                                    <strong>Fecha:</strong> {{ s.fecha_turno|date:"d/m/Y" }} <br>
+                                    <strong>Jornada:</strong> {{ s.get_jornada_display }}
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;" />
+                                <div>
+                                    <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Devolución del Turno</span>
+                                    <strong>Fecha 1:</strong> {{ s.fecha_devolucion|date:"d/m/Y" }} <br>
+                                    <strong>Jornada 1:</strong> {{ s.get_jornada_devolucion_display }}
+                                    {% if s.reemplazo_2 and s.reemplazo_2 != s.reemplazo %}
+                                        <br><span style="color: #2563eb; font-weight: 600;">Devolución a:</span> {{ s.reemplazo.first_name|default:s.reemplazo.username }}
+                                    {% endif %}
+                                    {% if s.jornada_devolucion_2 %}
+                                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                            <strong>Fecha 2:</strong> {{ s.fecha_devolucion_2|date:"d/m/Y" }} <br>
+                                            <strong>Jornada 2:</strong> {{ s.get_jornada_devolucion_2_display }}
+                                            {% if s.reemplazo_2 and s.reemplazo_2 != s.reemplazo %}
+                                                <br><span style="color: #2563eb; font-weight: 600;">Devolución a:</span> {{ s.reemplazo_2.first_name|default:s.reemplazo_2.username }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if s.motivo %}
+                                    <div style="margin-top: 8px; font-style: italic; color: var(--text-muted); font-size: 0.85rem;">
+                                        "{{ s.motivo }}"
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if s.estado == 'PENDIENTE' %}
+                            <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 10px; margin-top: 8px;">
+                                {% csrf_token %}
+                                <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; flex: 1; padding: 8px 14px;">
+                                    Aceptar Cambio
+                                </button>
+                                <button type="submit" name="accion" value="rechazar" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; flex: 1; padding: 8px 14px;">
+                                    Rechazar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="font-size: 0.95rem; color: var(--text-muted); text-align: center; padding: 40px 0;">
+                No tienes solicitudes de cambio de turno recibidas por el momento.
+            </p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
