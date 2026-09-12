@@ -13,7 +13,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.middleware.csrf import get_token
 from django.contrib import messages
-from .models import Profile, SolicitudCambio
+from .models import Profile, SolicitudCambio, Area, TurnoArea
 from .backends import fetch_and_sync_sisma_user
 
 _CONTRATOS_CACHE = []
@@ -316,9 +316,12 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('core:home')
 
+    areas = Area.objects.all()
+
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
+        area_id = request.POST.get('area_id', '').strip()
 
         if not username:
             messages.error(request, 'El usuario es obligatorio.')
@@ -333,12 +336,134 @@ def login_view(request):
 
             if user is not None:
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                if area_id and area_id.isdigit():
+                    area_obj = Area.objects.filter(pk=area_id).first()
+                    if area_obj:
+                        profile, _ = Profile.objects.get_or_create(user=user)
+                        profile.area = area_obj
+                        profile.save()
+
                 next_url = request.GET.get('next') or 'core:home'
                 return redirect(next_url)
             else:
                 messages.error(request, 'Usuario o contraseña incorrectos.')
 
-    return render(request, 'login.html')
+    return render(request, 'login.html', {'areas': areas})
+
+
+@login_required(login_url='core:login')
+def gestion_area_view(request):
+    """
+    Vista dedicada para la administración de turnos del área.
+    """
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if not profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para acceder a la gestión de áreas.')
+        return redirect('core:home')
+
+    if request.user.is_superuser:
+        areas_administradas = Area.objects.all()
+    else:
+        areas_administradas = request.user.areas_administradas.all()
+
+    if not areas_administradas.exists():
+        messages.warning(request, 'No tienes áreas asignadas bajo tu administración.')
+        return redirect('core:home')
+
+    area_id = request.GET.get('area_id')
+    area_activa = None
+    if area_id and area_id.isdigit():
+        area_activa = areas_administradas.filter(pk=area_id).first()
+    if not area_activa:
+        area_activa = areas_administradas.first()
+
+    empleados = User.objects.filter(profile__area=area_activa).select_related('profile').order_by('first_name')
+    turnos_programados = TurnoArea.objects.filter(area=area_activa).select_related('usuario', 'usuario__profile').order_by('fecha', 'usuario__first_name')
+    todos_los_usuarios = User.objects.all().select_related('profile').order_by('first_name')[:80]
+
+    context = {
+        'area_activa': area_activa,
+        'areas_administradas': areas_administradas,
+        'empleados': empleados,
+        'turnos_programados': turnos_programados,
+        'todos_los_usuarios': todos_los_usuarios,
+        'jornada_choices': SolicitudCambio.JORNADA_CHOICES,
+    }
+    return render(request, 'gestion_area.html', context)
+
+
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def asignar_turno_area(request):
+    """
+    Asigna un turno programado a un empleado dentro de un área.
+    """
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if not profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para asignar turnos de área.')
+        return redirect('core:home')
+
+    area_id = request.POST.get('area_id')
+    empleado_val = (request.POST.get('empleado_cedula') or '').strip()
+    fecha_turno = request.POST.get('fecha_turno')
+    jornada = request.POST.get('jornada')
+
+    area = get_object_or_404(Area, pk=area_id)
+    if not request.user.is_superuser and area not in request.user.areas_administradas.all():
+        messages.error(request, 'No tienes administración sobre esta área.')
+        return redirect('core:gestion_area')
+
+    usuario = User.objects.filter(username=empleado_val).first()
+    if not usuario and empleado_val.isdigit():
+        usuario = User.objects.filter(pk=empleado_val).first()
+
+    if not usuario:
+        usuario, _ = fetch_and_sync_sisma_user(empleado_val)
+
+    if not usuario:
+        messages.error(request, 'El empleado seleccionado no existe.')
+        return redirect(f'/gestion-area/?area_id={area.id}')
+
+    # Vincular empleado al área si no tiene una
+    prof_emp, _ = Profile.objects.get_or_create(user=usuario)
+    if not prof_emp.area:
+        prof_emp.area = area
+        prof_emp.save()
+
+    TurnoArea.objects.create(
+        area=area,
+        usuario=usuario,
+        fecha=fecha_turno,
+        jornada=jornada,
+        creado_por=request.user
+    )
+
+    emp_nombre = usuario.first_name or usuario.username
+    messages.success(request, f'Turno programado correctamente para {emp_nombre} en {area.nombre}.')
+    return redirect(f'/gestion-area/?area_id={area.id}')
+
+
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def eliminar_turno_area(request, pk):
+    """
+    Elimina un turno programado del área.
+    """
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if not profile.es_admin_area():
+        messages.error(request, 'No tienes permisos.')
+        return redirect('core:home')
+
+    turno = get_object_or_404(TurnoArea, pk=pk)
+    area_id = turno.area.id
+
+    if not request.user.is_superuser and turno.area not in request.user.areas_administradas.all():
+        messages.error(request, 'No tienes administración sobre esta área.')
+        return redirect('core:gestion_area')
+
+    turno.delete()
+    messages.info(request, 'El turno programado ha sido eliminado.')
+    return redirect(f'/gestion-area/?area_id={area_id}')
 
 
 def logout_view(request):

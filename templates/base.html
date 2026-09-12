@@ -26,6 +26,9 @@
                     <a href="{% url 'core:home' %}" class="nav-link">Inicio</a>
                     <a href="{% url 'core:solicitudes_recibidas' %}" class="nav-link">Solicitudes Recibidas</a>
                     <a href="{% url 'core:solicitudes_enviadas' %}" class="nav-link">Solicitudes Enviadas</a>
+                    {% if user.profile.es_admin_area or user.is_superuser %}
+                        <a href="{% url 'core:gestion_area' %}" class="nav-link" style="color: #059669; font-weight: 700; background: #ecfdf5; padding: 6px 12px; border-radius: 6px; border: 1px solid #a7f3d0;">Administrar Área</a>
+                    {% endif %}
                 </nav>
 
                 <div class="nav-user">

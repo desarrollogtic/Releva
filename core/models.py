@@ -1,12 +1,33 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Area(models.Model):
+    nombre = models.CharField(max_length=150, unique=True, verbose_name="Nombre del Área")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    administradores = models.ManyToManyField(User, related_name='areas_administradas', blank=True, verbose_name="Administradores del Área")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Área"
+        verbose_name_plural = "Áreas"
+
+    def __str__(self):
+        return self.nombre
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     cargo = models.CharField(max_length=150, blank=True, null=True, verbose_name="Cargo")
+    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, related_name='empleados', verbose_name="Área")
 
     def __str__(self):
         return f"Perfil de {self.user.first_name or self.user.username}"
+
+    def es_admin_area(self):
+        if self.user.is_superuser:
+            return True
+        return self.user.areas_administradas.exists()
 
 
 class SolicitudCambio(models.Model):
@@ -93,3 +114,20 @@ class SolicitudCambio(models.Model):
 
     def es_equivalente_tiempo(self):
         return self.get_horas_turno() == self.get_horas_devolucion()
+
+
+class TurnoArea(models.Model):
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='turnos_programados', verbose_name="Área")
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='turnos_asignados', verbose_name="Empleado")
+    fecha = models.DateField(verbose_name="Fecha del Turno")
+    jornada = models.CharField(max_length=50, choices=SolicitudCambio.JORNADA_CHOICES, verbose_name="Jornada")
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='turnos_creados', verbose_name="Programado Por")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    class Meta:
+        ordering = ['fecha', 'usuario']
+        verbose_name = "Turno de Área"
+        verbose_name_plural = "Turnos de Área"
+
+    def __str__(self):
+        return f"{self.usuario.first_name or self.usuario.username} - {self.area.nombre} ({self.fecha} [{self.jornada}])"

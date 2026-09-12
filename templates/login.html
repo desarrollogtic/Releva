@@ -46,6 +46,16 @@
                 />
             </div>
 
+            <div class="form-group">
+                <label for="area_id">Área de Desempeño</label>
+                <select name="area_id" id="area_id" class="form-input">
+                    <option value="">-- Selecciona tu Área --</option>
+                    {% for a in areas %}
+                        <option value="{{ a.id }}">{{ a.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-full">
                 Iniciar Sesión
             </button>

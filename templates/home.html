@@ -203,118 +203,58 @@
     </div>
 
     <!-- 3. Formulario para Crear Nueva Solicitud de Cambio -->
-    <div class="card">
-        <div style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
-            <h2 class="card-title" style="margin: 0; font-size: 1.25rem;">Crear Solicitud de Cambio de Turno</h2>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Completa los datos del turno a relevar y la fecha de devolución</span>
+    <div class="card" style="padding: 28px;">
+        <div style="margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--border-color);">
+            <h2 class="card-title" style="margin: 0; font-size: 1.35rem; color: #0f172a;">Crear Solicitud de Cambio de Turno</h2>
+            <span style="font-size: 0.875rem; color: var(--text-muted);">Sigue los pasos a continuación para registrar la sustitución de turno</span>
         </div>
 
-        <form method="POST" action="{% url 'core:crear_solicitud' %}" style="display: flex; flex-direction: column; gap: 20px;">
+        <form method="POST" action="{% url 'core:crear_solicitud' %}" style="display: flex; flex-direction: column; gap: 24px;">
             {% csrf_token %}
 
-            <!-- Buscador Estilo Google Omnibox -->
-            <div class="form-group google-search-container" style="margin-bottom: 0;">
-                <label for="reemplazo_search">Nombre del Reemplazo (Compañero)</label>
-                <div class="google-input-wrapper">
-                    <div class="google-input-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </div>
-                    <input 
-                        type="text" 
-                        id="reemplazo_search" 
-                        class="google-search-input" 
-                        placeholder="Escribe el nombre, cédula o cargo..." 
-                        autocomplete="off"
-                    />
-                    <div id="reemplazo_suggestions" class="google-search-dropdown" style="display: none;"></div>
-                </div>
-                <input type="hidden" name="reemplazo_cedula" id="reemplazo_cedula" required />
-                <input type="hidden" name="reemplazo_id" id="reemplazo_id" />
-            </div>
-
-            <!-- Bloque de Fechas y Jornadas -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <!-- Turno a Relevar -->
-                <div>
-                    <h3 style="font-size: 0.95rem; font-weight: 700; color: #2563eb; margin-bottom: 12px;">Turno a Relevar</h3>
-                    
-                    <div class="form-group">
-                        <label for="fecha_turno">Fecha de Turno</label>
-                        <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" required />
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="jornada">Jornada</label>
-                        <select name="jornada" id="jornada" class="form-input" required>
-                            {% for val, label in jornada_choices %}
-                                <option value="{{ val }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
+            <!-- PASO 1: TURNO A RELEVAR Y REEMPLAZO PRINCIPAL -->
+            <div class="step-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="background: #2563eb; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">1</span>
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Turno a Relevar y Compañero</h3>
+                        <span style="font-size: 0.85rem; color: #64748b;">Indica la persona que va a realizar tu turno y los datos del turno a salir</span>
                     </div>
                 </div>
 
-                <!-- Devolución del Relevo -->
-                <div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                        <h3 style="font-size: 0.95rem; font-weight: 700; color: #059669; margin: 0;">Devolución del Turno</h3>
-                        <div id="div_opciones_12h" style="display: none;">
-                            <label style="font-size: 0.8rem; cursor: pointer; color: #1e40af; font-weight: 600;">
-                                <input type="checkbox" id="chk_dividir_12h" name="dividir_12h" value="1" style="vertical-align: middle; margin-right: 4px;" />
-                                Devolver en 2 turnos de 6h
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Devolución 1 -->
-                    <div class="form-group">
-                        <label for="fecha_devolucion" id="lbl_fecha_dev_1">Fecha de Devolución</label>
-                        <input type="date" name="fecha_devolucion" id="fecha_devolucion" class="form-input" required />
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="jornada_devolucion" id="lbl_jornada_dev_1">Jornada de Devolución</label>
-                        <select name="jornada_devolucion" id="jornada_devolucion" class="form-input" required>
-                            {% for val, label in jornada_choices %}
-                                <option value="{{ val }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <!-- Devolución 2 (Opcional: para devolver 12 horas en 2 turnos de 6h a 1 o 2 personas) -->
-                    <div id="bloque_devolucion_2" style="display: none; padding-top: 14px; border-top: 1px dashed #cbd5e1; margin-top: 14px;">
-                        <div class="form-group google-search-container" style="margin-bottom: 14px;">
-                            <label for="reemplazo_search_2">Nombre del Reemplazo 2 (Para Devolución 2 - Opcional)</label>
-                            <div class="google-input-wrapper">
-                                <div class="google-input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="8"></circle>
-                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                    </svg>
-                                </div>
-                                <input 
-                                    type="text" 
-                                    id="reemplazo_search_2" 
-                                    class="google-search-input" 
-                                    placeholder="Buscar por nombre, cédula o cargo (Si es otra persona)..." 
-                                    autocomplete="off"
-                                />
-                                <div id="reemplazo_suggestions_2" class="google-search-dropdown" style="display: none;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    <!-- Buscador Reemplazo 1 -->
+                    <div class="form-group google-search-container" style="margin-bottom: 0;">
+                        <label for="reemplazo_search" style="font-weight: 600;">Nombre del Reemplazo (Compañero que te cubre)</label>
+                        <div class="google-input-wrapper">
+                            <div class="google-input-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
                             </div>
-                            <input type="hidden" name="reemplazo_cedula_2" id="reemplazo_cedula_2" />
-                            <input type="hidden" name="reemplazo_id_2" id="reemplazo_id_2" />
+                            <input 
+                                type="text" 
+                                id="reemplazo_search" 
+                                class="google-search-input" 
+                                placeholder="Escribe nombre, cédula o cargo..." 
+                                autocomplete="off"
+                            />
+                            <div id="reemplazo_suggestions" class="google-search-dropdown" style="display: none;"></div>
                         </div>
+                        <input type="hidden" name="reemplazo_cedula" id="reemplazo_cedula" required />
+                        <input type="hidden" name="reemplazo_id" id="reemplazo_id" />
+                    </div>
 
-                        <div class="form-group">
-                            <label for="fecha_devolucion_2">Fecha de Devolución 2 (6 Hrs)</label>
-                            <input type="date" name="fecha_devolucion_2" id="fecha_devolucion_2" class="form-input" />
-                        </div>
-
+                    <!-- Fecha de Turno y Jornada -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px;">
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="jornada_devolucion_2">Jornada de Devolución 2 (6 Hrs)</label>
-                            <select name="jornada_devolucion_2" id="jornada_devolucion_2" class="form-input">
+                            <label for="fecha_turno" style="font-weight: 600;">Fecha de Turno</label>
+                            <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" required />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="jornada" style="font-weight: 600;">Jornada a Relevar</label>
+                            <select name="jornada" id="jornada" class="form-input" required>
                                 {% for val, label in jornada_choices %}
                                     <option value="{{ val }}">{{ label }}</option>
                                 {% endfor %}
@@ -324,17 +264,147 @@
                 </div>
             </div>
 
-            <!-- Motivo -->
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="motivo">Motivo u Observaciones (Opcional)</label>
-                <textarea name="motivo" id="motivo" class="form-input" rows="2" placeholder="Ej. Inconveniente personal / cita médica..."></textarea>
+            <!-- PASO 2: COMPROMISO DE DEVOLUCIÓN DEL TURNO -->
+            <div class="step-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="background: #059669; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">2</span>
+                        <div>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Compromiso de Devolución del Turno</h3>
+                            <span style="font-size: 0.85rem; color: #64748b;">Establece las fechas y jornadas en que vas a devolver el tiempo prestado</span>
+                        </div>
+                    </div>
+
+                    <!-- Opción división de 12h -->
+                    <div id="div_opciones_12h" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px 14px; border-radius: 20px;">
+                        <label style="font-size: 0.85rem; cursor: pointer; color: #1e40af; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="chk_dividir_12h" name="dividir_12h" value="1" />
+                            Devolver este turno de 12h en 2 turnos de 6h
+                        </label>
+                    </div>
+                </div>
+
+                <!-- DEVOLUCIÓN MODO NORMAL (1 Tarjeta Completa) -->
+                <div id="contenedor_devolucion_normal">
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="fecha_devolucion" style="font-weight: 600;">Fecha de Devolución</label>
+                                <input type="date" name="fecha_devolucion" id="fecha_devolucion_normal" class="form-input" required />
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="jornada_devolucion" style="font-weight: 600;">Jornada de Devolución</label>
+                                <select name="jornada_devolucion" id="jornada_devolucion_normal" class="form-input" required>
+                                    {% for val, label in jornada_choices %}
+                                        <option value="{{ val }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DEVOLUCIÓN MODO DIVIDIDO 2X6H (2 Tarjetas Simétricas Lado a Lado) -->
+                <div id="contenedor_devolucion_dividida" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                        
+                        <!-- Tarjeta Devolución 1 (6 Hrs) -->
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #dcfce7;">
+                                <span style="font-size: 0.95rem; font-weight: 700; color: #166534;">Primera Devolución (6 Hrs)</span>
+                                <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.75rem;">6 Horas</span>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 14px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="fecha_devolucion_div" style="font-weight: 600;">Fecha de Devolución 1</label>
+                                    <input type="date" id="fecha_devolucion_div" class="form-input" disabled />
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="jornada_devolucion_div" style="font-weight: 600;">Jornada de Devolución 1</label>
+                                    <select id="jornada_devolucion_div" class="form-input" disabled>
+                                        {% for val, label in jornada_choices %}
+                                            <option value="{{ val }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta Devolución 2 (6 Hrs) -->
+                        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #e0f2fe;">
+                                <span style="font-size: 0.95rem; font-weight: 700; color: #0369a1;">Segunda Devolución (6 Hrs)</span>
+                                <span class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 0.75rem;">6 Horas</span>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 14px;">
+                                <div class="form-group google-search-container" style="margin-bottom: 0;">
+                                    <label for="reemplazo_search_2" style="font-weight: 600;">Compañero para Devolución 2 (Opcional)</label>
+                                    <div class="google-input-wrapper">
+                                        <div class="google-input-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            id="reemplazo_search_2" 
+                                            class="google-search-input" 
+                                            placeholder="Buscar si es a otra persona (Default: la misma)..." 
+                                            autocomplete="off"
+                                        />
+                                        <div id="reemplazo_suggestions_2" class="google-search-dropdown" style="display: none;"></div>
+                                    </div>
+                                    <input type="hidden" name="reemplazo_cedula_2" id="reemplazo_cedula_2" disabled />
+                                    <input type="hidden" name="reemplazo_id_2" id="reemplazo_id_2" disabled />
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="fecha_devolucion_2" style="font-weight: 600;">Fecha de Devolución 2</label>
+                                    <input type="date" name="fecha_devolucion_2" id="fecha_devolucion_2" class="form-input" disabled />
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="jornada_devolucion_2" style="font-weight: 600;">Jornada de Devolución 2</label>
+                                    <select name="jornada_devolucion_2" id="jornada_devolucion_2" class="form-input" disabled>
+                                        {% for val, label in jornada_choices %}
+                                            <option value="{{ val }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <button type="submit" class="btn btn-primary">
-                    Enviar Solicitud
-                </button>
+            <!-- PASO 3: CONFIRMACIÓN Y ENVÍO -->
+            <div class="step-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="background: #4f46e5; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">3</span>
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Observaciones y Envío</h3>
+                        <span style="font-size: 0.85rem; color: #64748b;">Ingresa notas adicionales y finaliza el envío de la solicitud</span>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="motivo" style="font-weight: 600;">Motivo u Observaciones (Opcional)</label>
+                    <textarea name="motivo" id="motivo" class="form-input" rows="2" placeholder="Ej. Cambio coordinado previamente con la jefatura / motivo personal..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem; font-weight: 600;">
+                        Enviar Solicitud de Cambio
+                    </button>
+                </div>
             </div>
+
         </form>
     </div>
 
@@ -494,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', function(e) {
             if (!mainCedula.value) {
                 e.preventDefault();
-                alert('Por favor selecciona una persona de las sugerencias del buscador principal.');
+                alert('Por favor selecciona una persona de las sugerencias del buscador del Paso 1.');
                 mainInput.focus();
             }
         });
@@ -510,18 +580,27 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const jornadaSelect = document.getElementById('jornada');
-    const devolucionSelect = document.getElementById('jornada_devolucion');
-    const devolucionSelect2 = document.getElementById('jornada_devolucion_2');
+    
+    // Inputs Devolución Normal
+    const contenedorNormal = document.getElementById('contenedor_devolucion_normal');
+    const inputDev1FechaNormal = document.getElementById('fecha_devolucion_normal');
+    const inputDev1JornadaNormal = document.getElementById('jornada_devolucion_normal');
+
+    // Inputs Devolución Dividida
+    const contenedorDividida = document.getElementById('contenedor_devolucion_dividida');
+    const inputDev1FechaDiv = document.getElementById('fecha_devolucion_div');
+    const inputDev1JornadaDiv = document.getElementById('jornada_devolucion_div');
+
+    const inputDev2Cedula = document.getElementById('reemplazo_cedula_2');
+    const inputDev2Id = document.getElementById('reemplazo_id_2');
     const fechaDevolucion2 = document.getElementById('fecha_devolucion_2');
+    const devolucionSelect2 = document.getElementById('jornada_devolucion_2');
 
     const divOpciones12h = document.getElementById('div_opciones_12h');
     const chkDividir12h = document.getElementById('chk_dividir_12h');
-    const bloqueDevolucion2 = document.getElementById('bloque_devolucion_2');
-    const lblFechaDev1 = document.getElementById('lbl_fecha_dev_1');
-    const lblJornadaDev1 = document.getElementById('lbl_jornada_dev_1');
 
     function actualizarJornadasDisponibles() {
-        if (!jornadaSelect || !devolucionSelect) return;
+        if (!jornadaSelect || !inputDev1JornadaNormal) return;
         const valTurno = jornadaSelect.value;
         const horasTurno = jornadaHoras[valTurno];
 
@@ -535,30 +614,81 @@ document.addEventListener('DOMContentLoaded', function() {
         const esDividido = (horasTurno === 12 && chkDividir12h && chkDividir12h.checked);
 
         if (esDividido) {
-            bloqueDevolucion2.style.display = 'block';
-            if (lblFechaDev1) lblFechaDev1.textContent = 'Fecha de Devolución 1 (6 Hrs)';
-            if (lblJornadaDev1) lblJornadaDev1.textContent = 'Jornada de Devolución 1 (6 Hrs)';
+            contenedorNormal.style.display = 'none';
+            contenedorDividida.style.display = 'block';
 
-            if (fechaDevolucion2) fechaDevolucion2.required = true;
-            if (devolucionSelect2) devolucionSelect2.required = true;
+            // Deshabilitar normal
+            inputDev1FechaNormal.disabled = true;
+            inputDev1FechaNormal.required = false;
+            inputDev1FechaNormal.removeAttribute('name');
 
-            filtrarSelectPorHoras(devolucionSelect, 6);
-            filtrarSelectPorHoras(devolucionSelect2, 6);
-        } else {
-            bloqueDevolucion2.style.display = 'none';
-            if (lblFechaDev1) lblFechaDev1.textContent = 'Fecha de Devolución';
-            if (lblJornadaDev1) lblJornadaDev1.textContent = 'Jornada de Devolución';
+            inputDev1JornadaNormal.disabled = true;
+            inputDev1JornadaNormal.required = false;
+            inputDev1JornadaNormal.removeAttribute('name');
+
+            // Habilitar dividida 1
+            inputDev1FechaDiv.disabled = false;
+            inputDev1FechaDiv.required = true;
+            inputDev1FechaDiv.setAttribute('name', 'fecha_devolucion');
+
+            inputDev1JornadaDiv.disabled = false;
+            inputDev1JornadaDiv.required = true;
+            inputDev1JornadaDiv.setAttribute('name', 'jornada_devolucion');
+
+            // Habilitar dividida 2
+            if (inputDev2Cedula) inputDev2Cedula.disabled = false;
+            if (inputDev2Id) inputDev2Id.disabled = false;
 
             if (fechaDevolucion2) {
+                fechaDevolucion2.disabled = false;
+                fechaDevolucion2.required = true;
+            }
+            if (devolucionSelect2) {
+                devolucionSelect2.disabled = false;
+                devolucionSelect2.required = true;
+            }
+
+            filtrarSelectPorHoras(inputDev1JornadaDiv, 6);
+            filtrarSelectPorHoras(devolucionSelect2, 6);
+        } else {
+            contenedorNormal.style.display = 'block';
+            contenedorDividida.style.display = 'none';
+
+            // Habilitar normal
+            inputDev1FechaNormal.disabled = false;
+            inputDev1FechaNormal.required = true;
+            inputDev1FechaNormal.setAttribute('name', 'fecha_devolucion');
+
+            inputDev1JornadaNormal.disabled = false;
+            inputDev1JornadaNormal.required = true;
+            inputDev1JornadaNormal.setAttribute('name', 'jornada_devolucion');
+
+            // Deshabilitar dividida 1
+            inputDev1FechaDiv.disabled = true;
+            inputDev1FechaDiv.required = false;
+            inputDev1FechaDiv.value = '';
+            inputDev1FechaDiv.removeAttribute('name');
+
+            inputDev1JornadaDiv.disabled = true;
+            inputDev1JornadaDiv.required = false;
+            inputDev1JornadaDiv.removeAttribute('name');
+
+            // Deshabilitar dividida 2
+            if (inputDev2Cedula) inputDev2Cedula.disabled = true;
+            if (inputDev2Id) inputDev2Id.disabled = true;
+
+            if (fechaDevolucion2) {
+                fechaDevolucion2.disabled = true;
                 fechaDevolucion2.required = false;
                 fechaDevolucion2.value = '';
             }
             if (devolucionSelect2) {
+                devolucionSelect2.disabled = true;
                 devolucionSelect2.required = false;
                 devolucionSelect2.value = '';
             }
 
-            filtrarSelectPorHoras(devolucionSelect, horasTurno);
+            filtrarSelectPorHoras(inputDev1JornadaNormal, horasTurno);
         }
     }
 

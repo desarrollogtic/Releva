@@ -15,6 +15,11 @@ urlpatterns = [
     path('solicitudes/<int:pk>/responder/', views.responder_solicitud, name='responder_solicitud'),
     path('solicitudes/<int:pk>/cancelar/', views.cancelar_solicitud, name='cancelar_solicitud'),
 
+    # Gestión de Área y Turnos de Área
+    path('gestion-area/', views.gestion_area_view, name='gestion_area'),
+    path('gestion-area/asignar-turno/', views.asignar_turno_area, name='asignar_turno_area'),
+    path('gestion-area/turno/<int:pk>/eliminar/', views.eliminar_turno_area, name='eliminar_turno_area'),
+
     # Endpoints API
     path('api/usuarios/buscar/', views.api_buscar_usuarios, name='api_buscar_usuarios'),
     path('api/login/', views.api_login, name='api_login'),
