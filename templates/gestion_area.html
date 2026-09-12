@@ -21,30 +21,42 @@
                 <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a;">
                     Gestión por Área: <span style="color: #059669;">{{ area_activa.nombre }}</span>
                 </h1>
-                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de turnos y colaboradores del área</span>
+                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de turnos, coordinadores y colaboradores del área</span>
             </div>
 
-            <!-- Selector si administra múltiples áreas -->
-            {% if areas_administradas|length > 1 or user.is_superuser %}
-                <form method="GET" action="{% url 'core:gestion_area' %}" style="display: flex; align-items: center; gap: 8px;">
-                    <label for="area_id" style="font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0;">Cambiar Área:</label>
-                    <select name="area_id" id="area_id" class="form-input" style="padding: 6px 12px; font-size: 0.9rem;" onchange="this.form.submit()">
-                        {% for a in areas_administradas %}
-                            <option value="{{ a.id }}" {% if a.id == area_activa.id %}selected{% endif %}>{{ a.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
-            {% endif %}
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <!-- Selector si administra múltiples áreas -->
+                {% if areas_administradas|length > 1 or user.is_superuser %}
+                    <form method="GET" action="{% url 'core:gestion_area' %}" style="display: flex; align-items: center; gap: 8px;">
+                        <label for="area_id" style="font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0;">Área:</label>
+                        <select name="area_id" id="area_id" class="form-input" style="padding: 6px 12px; font-size: 0.9rem;" onchange="this.form.submit()">
+                            {% for a in areas_administradas %}
+                                <option value="{{ a.id }}" {% if a.id == area_activa.id %}selected{% endif %}>{{ a.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                {% endif %}
+
+                <!-- Botón Eliminar Área (Solo Superusuario) -->
+                {% if user.is_superuser and area_activa %}
+                    <form method="POST" action="{% url 'core:eliminar_area' area_activa.id %}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de ELIMINAR el área {{ area_activa.nombre }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 6px 12px; font-size: 0.85rem;">
+                            Eliminar Área
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
             <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Administrador(es)</span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Coordinador(es) del Área</span>
                 <div style="font-weight: 600; color: #0f172a; margin-top: 4px; font-size: 0.95rem;">
                     {% for adm in area_activa.administradores.all %}
                         {{ adm.first_name|default:adm.username }}{% if not forloop.last %}, {% endif %}
                     {% empty %}
-                        Sin asignar
+                        Sin coordinadores asignados
                     {% endfor %}
                 </div>
             </div>
@@ -57,6 +69,86 @@
             </div>
         </div>
     </div>
+
+    <!-- SECCIÓN: GESTIÓN DE COORDINADORES DEL ÁREA -->
+    <div class="card" style="margin-bottom: 28px; background: #faf5ff; border: 1px solid #e9d5ff;">
+        <div style="margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3e8ff;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: #6b21a8;">Coordinadores del Área ({{ area_activa.nombre }})</h2>
+            <span style="font-size: 0.85rem; color: #7e22ce;">Asigna o remueve administradores/coordinadores encargados de esta área</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <!-- Lista de Coordinadores Actuales -->
+            <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #6b21a8; text-transform: uppercase; display: block; margin-bottom: 8px;">Coordinadores Actuales</span>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for adm in area_activa.administradores.all %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 8px 14px; border-radius: 6px; border: 1px solid #e9d5ff;">
+                            <div>
+                                <strong style="font-size: 0.9rem; color: #0f172a;">{{ adm.first_name|default:adm.username }}</strong>
+                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Cédula: {{ adm.username }}</span>
+                            </div>
+                            <form method="POST" action="{% url 'core:quitar_coordinador_area' area_activa.id adm.id %}" style="margin: 0;" onsubmit="return confirm('¿Quitar a {{ adm.first_name|default:adm.username }} como coordinador?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 2px 8px; font-size: 0.75rem;">
+                                    Quitar
+                                </button>
+                            </form>
+                        </div>
+                    {% empty %}
+                        <span style="font-size: 0.85rem; color: #7e22ce; font-style: italic;">No hay coordinadores asignados a esta área.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Formulario para Agregar Coordinador -->
+            <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #6b21a8; text-transform: uppercase; display: block; margin-bottom: 8px;">Asignar Nuevo Coordinador</span>
+                <form method="POST" action="{% url 'core:agregar_coordinador_area' %}" style="display: flex; flex-direction: column; gap: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="area_id" value="{{ area_activa.id }}" />
+                    
+                    <select name="coordinador_cedula" class="form-input" required style="font-size: 0.9rem;">
+                        <option value="">-- Seleccionar Persona --</option>
+                        {% for u in todos_los_usuarios %}
+                            <option value="{{ u.username }}">{{ u.first_name|default:u.username }} ({{ u.username }}) - {{ u.profile.cargo|default:'' }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit" class="btn btn-primary" style="background-color: #7e22ce; border-color: #7e22ce; padding: 8px 16px; font-weight: 600; font-size: 0.9rem;">
+                        + Asignar Coordinador
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN SOLO SUPERUSUARIO: CREAR NUEVA ÁREA -->
+    {% if user.is_superuser %}
+        <div class="card" style="margin-bottom: 28px; background: #f0f9ff; border: 1px solid #bae6fd;">
+            <div style="margin-bottom: 12px;">
+                <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: #0369a1;">Crear Nueva Área en el Sistema</h2>
+                <span style="font-size: 0.85rem; color: #0284c7;">Permite registrar un área nueva para asignarle coordinadores y turnos</span>
+            </div>
+
+            <form method="POST" action="{% url 'core:crear_area' %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: end;">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="nombre_area_nueva" style="font-weight: 600; color: #0369a1;">Nombre del Área</label>
+                    <input type="text" name="nombre" id="nombre_area_nueva" class="form-input" placeholder="Ej. Radiología / UCI Adultos..." required />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="desc_area_nueva" style="font-weight: 600; color: #0369a1;">Descripción (Opcional)</label>
+                    <input type="text" name="descripcion" id="desc_area_nueva" class="form-input" placeholder="Descripción breve..." />
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="background-color: #0284c7; border-color: #0284c7; padding: 10px 20px; font-weight: 600; height: 42px;">
+                    + Crear Área
+                </button>
+            </form>
+        </div>
+    {% endif %}
 
     <!-- Formulario para Asignar / Programar Nuevo Turno -->
     <div class="card" style="margin-bottom: 28px; border-top: 4px solid #059669;">

@@ -466,6 +466,111 @@ def eliminar_turno_area(request, pk):
     return redirect(f'/gestion-area/?area_id={area_id}')
 
 
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def crear_area(request):
+    """
+    Permite al administrador principal crear una nueva área.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Únicamente el administrador principal puede crear áreas.')
+        return redirect('core:gestion_area')
+
+    nombre = request.POST.get('nombre', '').strip()
+    descripcion = request.POST.get('descripcion', '').strip()
+
+    if not nombre:
+        messages.error(request, 'El nombre del área es obligatorio.')
+        return redirect('core:gestion_area')
+
+    area, created = Area.objects.get_or_create(nombre=nombre, defaults={'descripcion': descripcion})
+    if created:
+        messages.success(request, f'Área "{nombre}" creada correctamente.')
+    else:
+        messages.warning(request, f'El área "{nombre}" ya existía.')
+
+    return redirect(f'/gestion-area/?area_id={area.id}')
+
+
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def eliminar_area(request, pk):
+    """
+    Permite al administrador principal eliminar un área existente.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Únicamente el administrador principal puede eliminar áreas.')
+        return redirect('core:gestion_area')
+
+    area = get_object_or_404(Area, pk=pk)
+    nombre_area = area.nombre
+    area.delete()
+    messages.info(request, f'Área "{nombre_area}" eliminada correctamente.')
+    return redirect('core:gestion_area')
+
+
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def agregar_coordinador_area(request):
+    """
+    Asigna un usuario como coordinador/administrador de un área.
+    """
+    if not request.user.is_superuser and not request.user.profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para agregar coordinadores.')
+        return redirect('core:gestion_area')
+
+    area_id = request.POST.get('area_id')
+    coordinador_val = (request.POST.get('coordinador_cedula') or '').strip()
+
+    area = get_object_or_404(Area, pk=area_id)
+    if not request.user.is_superuser and area not in request.user.areas_administradas.all():
+        messages.error(request, 'No tienes permisos de administración en esta área.')
+        return redirect('core:gestion_area')
+
+    usuario = User.objects.filter(username=coordinador_val).first()
+    if not usuario and coordinador_val.isdigit():
+        usuario = User.objects.filter(pk=coordinador_val).first()
+
+    if not usuario:
+        usuario, _ = fetch_and_sync_sisma_user(coordinador_val)
+
+    if not usuario:
+        messages.error(request, 'El usuario seleccionado no existe.')
+        return redirect(f'/gestion-area/?area_id={area.id}')
+
+    area.administradores.add(usuario)
+    prof, _ = Profile.objects.get_or_create(user=usuario)
+    if not prof.area:
+        prof.area = area
+        prof.save()
+
+    coord_nombre = usuario.first_name or usuario.username
+    messages.success(request, f'{coord_nombre} ha sido asignado(a) como coordinador(a) de {area.nombre}.')
+    return redirect(f'/gestion-area/?area_id={area.id}')
+
+
+@login_required(login_url='core:login')
+@require_http_methods(["POST"])
+def quitar_coordinador_area(request, area_pk, user_pk):
+    """
+    Remueve un coordinador/administrador de un área.
+    """
+    if not request.user.is_superuser and not request.user.profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para remover coordinadores.')
+        return redirect('core:gestion_area')
+
+    area = get_object_or_404(Area, pk=area_pk)
+    if not request.user.is_superuser and area not in request.user.areas_administradas.all():
+        messages.error(request, 'No tienes permisos de administración en esta área.')
+        return redirect('core:gestion_area')
+
+    usuario = get_object_or_404(User, pk=user_pk)
+    area.administradores.remove(usuario)
+    coord_nombre = usuario.first_name or usuario.username
+    messages.info(request, f'{coord_nombre} ya no es coordinador(a) de {area.nombre}.')
+    return redirect(f'/gestion-area/?area_id={area.id}')
+
+
 def logout_view(request):
     logout(request)
     return redirect('core:login')
