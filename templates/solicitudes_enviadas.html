@@ -37,12 +37,16 @@
                                         y {{ s.reemplazo_2.first_name|default:s.reemplazo_2.username }}
                                     {% endif %}
                                 </strong>
-                                {% if s.estado == 'PENDIENTE' %}
-                                    <span class="badge" style="background: #fef3c7; color: #92400e;">Pendiente</span>
+                                {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 700;">Pendiente Compañero</span>
+                                {% elif s.estado == 'PENDIENTE_COORDINADOR' %}
+                                    <span class="badge" style="background: #fed7aa; color: #9a3412; font-weight: 700;">Pendiente Coordinador</span>
+                                {% elif s.estado == 'PENDIENTE_GH' %}
+                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">Pendiente Gestión Humana</span>
                                 {% elif s.estado == 'ACEPTADA' %}
-                                    <span class="badge" style="background: #dcfce7; color: #166534;">Aceptada</span>
+                                    <span class="badge" style="background: #dcfce7; color: #166534; font-weight: 700;">Aprobada</span>
                                 {% elif s.estado == 'RECHAZADA' %}
-                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">Rechazada</span>
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700;">Rechazada</span>
                                 {% else %}
                                     <span class="badge" style="background: #f1f5f9; color: #475569;">Cancelada</span>
                                 {% endif %}
@@ -85,7 +89,7 @@
                             </div>
                         </div>
 
-                        {% if s.estado == 'PENDIENTE' %}
+                        {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' or s.estado == 'PENDIENTE_COORDINADOR' or s.estado == 'PENDIENTE_GH' %}
                             <form method="POST" action="{% url 'core:cancelar_solicitud' s.pk %}" style="margin-top: 8px;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline" style="width: 100%; color: #dc2626; border-color: #fca5a5; padding: 8px 14px;">

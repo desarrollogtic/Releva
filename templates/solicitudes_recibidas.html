@@ -17,48 +17,63 @@
     <div class="card">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border-color);">
             <div>
-                <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--text-primary);">Solicitudes Recibidas</h1>
-                <span style="font-size: 0.875rem; color: var(--text-muted);">Peticiones de cambio de turno enviadas por tus compañeros</span>
+                {% if user.profile.es_admin_area %}
+                    <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #059669;">Solicitudes de Cambio de Turnos por Autorizar</h1>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">Revisión y respuesta para aprobar o rechazar las solicitudes de cambio de turno</span>
+                {% else %}
+                    <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--text-primary);">Solicitudes Recibidas</h1>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">Peticiones de cambio de turno enviadas por tus compañeros</span>
+                {% endif %}
             </div>
-            <span class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 0.9rem; padding: 6px 12px;">
+            <span class="badge" style="background: #ecfdf5; color: #047857; font-size: 0.9rem; padding: 6px 14px; font-weight: 700;">
                 {{ recibidas_pendientes }} pendientes
             </span>
         </div>
 
         {% if solicitudes_recibidas %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
                 {% for s in solicitudes_recibidas %}
-                    <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                <strong style="font-size: 1.05rem; color: var(--text-primary);">
-                                    {{ s.solicitante.first_name|default:s.solicitante.username }}
-                                </strong>
-                                {% if s.estado == 'PENDIENTE' %}
-                                    <span class="badge" style="background: #fef3c7; color: #92400e;">Pendiente</span>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Solicitante</span>
+                                    <strong style="font-size: 1.05rem; color: var(--text-primary); display: block;">
+                                        {{ s.solicitante.first_name|default:s.solicitante.username }}
+                                    </strong>
+                                </div>
+                                {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 700;">Pendiente Compañero</span>
+                                {% elif s.estado == 'PENDIENTE_COORDINADOR' %}
+                                    <span class="badge" style="background: #fed7aa; color: #9a3412; font-weight: 700;">Pendiente Coordinador</span>
+                                {% elif s.estado == 'PENDIENTE_GH' %}
+                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">Pendiente Gestión Humana</span>
                                 {% elif s.estado == 'ACEPTADA' %}
-                                    <span class="badge" style="background: #dcfce7; color: #166534;">Aceptada</span>
+                                    <span class="badge" style="background: #dcfce7; color: #166534; font-weight: 700;">Aprobada</span>
                                 {% elif s.estado == 'RECHAZADA' %}
-                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">Rechazada</span>
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700;">Rechazada</span>
                                 {% else %}
                                     <span class="badge" style="background: #f1f5f9; color: #475569;">Cancelada</span>
                                 {% endif %}
                             </div>
 
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                                <strong>Cargo:</strong> {{ s.solicitante.profile.cargo|default:"No asignado" }} | <strong>Cédula:</strong> {{ s.solicitante.username }}<br>
-                                <span style="font-size: 0.8rem;">Fecha de Solicitud: {{ s.fecha_solicitud|date:"d/m/Y H:i" }}</span>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; background: #f8fafc; padding: 8px 12px; border-radius: 6px;">
+                                <strong>Reemplazo (Cubre):</strong> {{ s.reemplazo.first_name|default:s.reemplazo.username }} (Cédula: {{ s.reemplazo.username }})<br>
+                                {% if s.coordinador %}
+                                    <strong>Coordinador Autoriza:</strong> {{ s.coordinador.first_name|default:s.coordinador.username }}<br>
+                                {% endif %}
+                                <span style="font-size: 0.78rem; color: #94a3b8;">Solicitado el: {{ s.fecha_solicitud|date:"d/m/Y H:i" }}</span>
                             </p>
 
-                            <div style="font-size: 0.9rem; background: #f8fafc; padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color); line-height: 1.6;">
+                            <div style="font-size: 0.9rem; background: #ffffff; padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color); line-height: 1.6;">
                                 <div style="margin-bottom: 6px;">
-                                    <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Turno a Relevar</span>
+                                    <span style="color: #2563eb; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Turno a Relevar</span>
                                     <strong>Fecha:</strong> {{ s.fecha_turno|date:"d/m/Y" }} <br>
                                     <strong>Jornada:</strong> {{ s.get_jornada_display }}
                                 </div>
-                                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;" />
+                                <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 8px 0;" />
                                 <div>
-                                    <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Devolución del Turno</span>
+                                    <span style="color: #059669; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Devolución del Turno</span>
                                     <strong>Fecha 1:</strong> {{ s.fecha_devolucion|date:"d/m/Y" }} <br>
                                     <strong>Jornada 1:</strong> {{ s.get_jornada_devolucion_display }}
                                     {% if s.reemplazo_2 and s.reemplazo_2 != s.reemplazo %}
@@ -75,21 +90,45 @@
                                     {% endif %}
                                 </div>
                                 {% if s.motivo %}
-                                    <div style="margin-top: 8px; font-style: italic; color: var(--text-muted); font-size: 0.85rem;">
+                                    <div style="margin-top: 10px; font-style: italic; color: #475569; font-size: 0.85rem; background: #f1f5f9; padding: 6px 10px; border-radius: 4px;">
                                         "{{ s.motivo }}"
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
 
-                        {% if s.estado == 'PENDIENTE' %}
-                            <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 10px; margin-top: 8px;">
+                        {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' %}
+                            {% if user == s.reemplazo or user == s.reemplazo_2 or is_gh %}
+                                <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
+                                    {% csrf_token %}
+                                    <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                        ✓ Aceptar Reemplazo
+                                    </button>
+                                    <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                        ✕ Rechazar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% elif s.estado == 'PENDIENTE_COORDINADOR' %}
+                            {% if user == s.coordinador or user.profile.es_admin_area or is_gh %}
+                                <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
+                                    {% csrf_token %}
+                                    <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                        ✓ Aprobar (Enviar a GH)
+                                    </button>
+                                    <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                        ✕ Rechazar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% elif s.estado == 'PENDIENTE_GH' and is_gh %}
+                            <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
                                 {% csrf_token %}
-                                <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; flex: 1; padding: 8px 14px;">
-                                    Aceptar Cambio
+                                <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                    ✓ Aprobar Definitivamente
                                 </button>
-                                <button type="submit" name="accion" value="rechazar" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; flex: 1; padding: 8px 14px;">
-                                    Rechazar
+                                <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                    ✕ Rechazar
                                 </button>
                             </form>
                         {% endif %}
@@ -98,7 +137,7 @@
             </div>
         {% else %}
             <p style="font-size: 0.95rem; color: var(--text-muted); text-align: center; padding: 40px 0;">
-                No tienes solicitudes de cambio de turno recibidas por el momento.
+                No hay solicitudes de cambio de turno registradas por el momento.
             </p>
         {% endif %}
     </div>

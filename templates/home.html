@@ -218,14 +218,14 @@
                     <span style="background: #2563eb; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">1</span>
                     <div>
                         <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Turno a Relevar y Compañero</h3>
-                        <span style="font-size: 0.85rem; color: #64748b;">Indica la persona que va a realizar tu turno y los datos del turno a salir</span>
+                        <span style="font-size: 0.85rem; color: #64748b;">Busca el compañero que te reemplaza e indica la fecha y jornada a relevar</span>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                    <!-- Buscador Reemplazo 1 -->
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Buscador de Reemplazo (Ancho Completo) -->
                     <div class="form-group google-search-container" style="margin-bottom: 0;">
-                        <label for="reemplazo_search" style="font-weight: 600;">Nombre del Reemplazo (Compañero que te cubre)</label>
+                        <label for="reemplazo_search" style="font-weight: 700; color: #1e40af; display: block; margin-bottom: 6px; font-size: 0.95rem;">Buscar Compañero Reemplazo (Persona que cubre tu turno)</label>
                         <div class="google-input-wrapper">
                             <div class="google-input-icon">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -237,8 +237,9 @@
                                 type="text" 
                                 id="reemplazo_search" 
                                 class="google-search-input" 
-                                placeholder="Escribe nombre, cédula o cargo..." 
+                                placeholder="Escribe nombre, cédula o cargo del compañero..." 
                                 autocomplete="off"
+                                style="height: 46px; font-size: 1rem;"
                             />
                             <div id="reemplazo_suggestions" class="google-search-dropdown" style="display: none;"></div>
                         </div>
@@ -246,15 +247,18 @@
                         <input type="hidden" name="reemplazo_id" id="reemplazo_id" />
                     </div>
 
-                    <!-- Fecha de Turno y Jornada -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px;">
+                    <!-- Fila Inferior Alineada: Fecha de Turno y Jornada -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; align-items: start;">
+                        <!-- Fecha de Turno -->
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="fecha_turno" style="font-weight: 600;">Fecha de Turno</label>
-                            <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" required />
+                            <label for="fecha_turno" style="font-weight: 600; min-height: 22px; display: flex; align-items: center; margin-bottom: 6px;">Fecha de Turno</label>
+                            <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" style="height: 42px;" required />
                         </div>
+
+                        <!-- Jornada a Relevar -->
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="jornada" style="font-weight: 600;">Jornada a Relevar</label>
-                            <select name="jornada" id="jornada" class="form-input" required>
+                            <label for="jornada" style="font-weight: 600; min-height: 22px; display: flex; align-items: center; margin-bottom: 6px;">Jornada a Relevar</label>
+                            <select name="jornada" id="jornada" class="form-input" style="height: 42px; width: 100%;" required>
                                 {% for val, label in jornada_choices %}
                                     <option value="{{ val }}">{{ label }}</option>
                                 {% endfor %}
@@ -286,16 +290,17 @@
 
                 <!-- DEVOLUCIÓN MODO NORMAL (1 Tarjeta Completa) -->
                 <div id="contenedor_devolucion_normal">
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; align-items: start;">
                             <div class="form-group" style="margin-bottom: 0;">
-                                <label for="fecha_devolucion" style="font-weight: 600;">Fecha de Devolución</label>
-                                <input type="date" name="fecha_devolucion" id="fecha_devolucion_normal" class="form-input" required />
+                                <label for="fecha_devolucion" style="font-weight: 600; min-height: 22px; display: flex; align-items: center; margin-bottom: 6px;">Fecha de Devolución</label>
+                                <input type="date" name="fecha_devolucion" id="fecha_devolucion_normal" class="form-input" style="height: 42px;" required />
+                                <span style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: block;">Debe ser una fecha posterior a la fecha del turno a relevar.</span>
                             </div>
 
                             <div class="form-group" style="margin-bottom: 0;">
-                                <label for="jornada_devolucion" style="font-weight: 600;">Jornada de Devolución</label>
-                                <select name="jornada_devolucion" id="jornada_devolucion_normal" class="form-input" required>
+                                <label for="jornada_devolucion" style="font-weight: 600; min-height: 22px; display: flex; align-items: center; margin-bottom: 6px;">Jornada de Devolución</label>
+                                <select name="jornada_devolucion" id="jornada_devolucion_normal" class="form-input" style="height: 42px; width: 100%;" required>
                                     {% for val, label in jornada_choices %}
                                         <option value="{{ val }}">{{ label }}</option>
                                     {% endfor %}
@@ -307,7 +312,7 @@
 
                 <!-- DEVOLUCIÓN MODO DIVIDIDO 2X6H (2 Tarjetas Simétricas Lado a Lado) -->
                 <div id="contenedor_devolucion_dividida" style="display: none;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                         
                         <!-- Tarjeta Devolución 1 (6 Hrs) -->
                         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px;">
@@ -318,13 +323,14 @@
 
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="fecha_devolucion_div" style="font-weight: 600;">Fecha de Devolución 1</label>
-                                    <input type="date" id="fecha_devolucion_div" class="form-input" disabled />
+                                    <label for="fecha_devolucion_div" style="font-weight: 600; margin-bottom: 6px; display: block;">Fecha de Devolución 1</label>
+                                    <input type="date" id="fecha_devolucion_div" class="form-input" style="height: 42px;" disabled />
+                                    <span style="font-size: 0.78rem; color: #166534; margin-top: 4px; display: block;">Debe ser posterior a la fecha del turno.</span>
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="jornada_devolucion_div" style="font-weight: 600;">Jornada de Devolución 1</label>
-                                    <select id="jornada_devolucion_div" class="form-input" disabled>
+                                    <label for="jornada_devolucion_div" style="font-weight: 600; margin-bottom: 6px; display: block;">Jornada de Devolución 1</label>
+                                    <select id="jornada_devolucion_div" class="form-input" style="height: 42px;" disabled>
                                         {% for val, label in jornada_choices %}
                                             <option value="{{ val }}">{{ label }}</option>
                                         {% endfor %}
@@ -342,7 +348,7 @@
 
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 <div class="form-group google-search-container" style="margin-bottom: 0;">
-                                    <label for="reemplazo_search_2" style="font-weight: 600;">Compañero para Devolución 2 (Opcional)</label>
+                                    <label for="reemplazo_search_2" style="font-weight: 600; margin-bottom: 6px; display: block;">Compañero Devolución 2 (Opcional)</label>
                                     <div class="google-input-wrapper">
                                         <div class="google-input-icon">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -354,8 +360,9 @@
                                             type="text" 
                                             id="reemplazo_search_2" 
                                             class="google-search-input" 
-                                            placeholder="Buscar si es a otra persona (Default: la misma)..." 
+                                            placeholder="Buscar otra persona..." 
                                             autocomplete="off"
+                                            style="height: 42px;"
                                         />
                                         <div id="reemplazo_suggestions_2" class="google-search-dropdown" style="display: none;"></div>
                                     </div>
@@ -364,13 +371,14 @@
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="fecha_devolucion_2" style="font-weight: 600;">Fecha de Devolución 2</label>
-                                    <input type="date" name="fecha_devolucion_2" id="fecha_devolucion_2" class="form-input" disabled />
+                                    <label for="fecha_devolucion_2" style="font-weight: 600; margin-bottom: 6px; display: block;">Fecha de Devolución 2</label>
+                                    <input type="date" name="fecha_devolucion_2" id="fecha_devolucion_2" class="form-input" style="height: 42px;" disabled />
+                                    <span style="font-size: 0.78rem; color: #0369a1; margin-top: 4px; display: block;">Debe ser posterior a la fecha del turno.</span>
                                 </div>
 
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="jornada_devolucion_2" style="font-weight: 600;">Jornada de Devolución 2</label>
-                                    <select name="jornada_devolucion_2" id="jornada_devolucion_2" class="form-input" disabled>
+                                    <label for="jornada_devolucion_2" style="font-weight: 600; margin-bottom: 6px; display: block;">Jornada de Devolución 2</label>
+                                    <select name="jornada_devolucion_2" id="jornada_devolucion_2" class="form-input" style="height: 42px;" disabled>
                                         {% for val, label in jornada_choices %}
                                             <option value="{{ val }}">{{ label }}</option>
                                         {% endfor %}
@@ -383,25 +391,49 @@
                 </div>
             </div>
 
-            <!-- PASO 3: CONFIRMACIÓN Y ENVÍO -->
+            <!-- PASO 3: OBSERVACIONES Y MOTIVO -->
             <div class="step-card" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                    <span style="background: #4f46e5; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">3</span>
+                    <span style="background: #7c3aed; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">3</span>
                     <div>
-                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Observaciones y Envío</h3>
-                        <span style="font-size: 0.85rem; color: #64748b;">Ingresa notas adicionales y finaliza el envío de la solicitud</span>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #0f172a;">Observaciones</h3>
+                        <span style="font-size: 0.85rem; color: #64748b;">Ingresa notas adicionales o aclaraciones sobre la sustitución de turno</span>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="motivo" style="font-weight: 600;">Motivo u Observaciones (Opcional)</label>
-                    <textarea name="motivo" id="motivo" class="form-input" rows="2" placeholder="Ej. Cambio coordinado previamente con la jefatura / motivo personal..."></textarea>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="motivo" style="font-weight: 600; display: block; margin-bottom: 6px;">Motivo u Observaciones (Opcional)</label>
+                    <textarea name="motivo" id="motivo" class="form-input" rows="2" placeholder="Ej. Cambio coordinado previamente con la jefatura / motivo personal..." style="padding: 10px 14px;"></textarea>
+                </div>
+            </div>
+
+            <!-- PASO 4: SELECCIONAR COORDINADOR Y ENVIAR SOLICITUD -->
+            <div class="step-card" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #dcfce7;">
+                    <span style="background: #059669; color: #ffffff; font-weight: 700; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">4</span>
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: #14532d;">Seleccionar Coordinador y Enviar Solicitud</h3>
+                        <span style="font-size: 0.85rem; color: #166534;">Elige el coordinador encargado de autorizar este cambio y finaliza el envío</span>
+                    </div>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem; font-weight: 600;">
-                        Enviar Solicitud de Cambio
-                    </button>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="coordinador_cedula" style="font-weight: 700; color: #15803d; display: block; margin-bottom: 6px; font-size: 0.95rem;">Coordinador a Quien va Dirigida la Solicitud</label>
+                        <select name="coordinador_cedula" id="coordinador_cedula" class="form-input" required style="font-weight: 600; height: 46px; background: #ffffff; font-size: 0.95rem; border-color: #86efac;">
+                            <option value="">-- Seleccionar Coordinador --</option>
+                            {% for c in coordinadores %}
+                                <option value="{{ c.username }}">{{ c.first_name|default:c.username }} ({{ c.username }}){% if c.profile.cargo %} - {{ c.profile.cargo }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <span style="font-size: 0.8rem; color: #166534; margin-top: 6px; display: block;">Selecciona a tu coordinador de área para que reciba la solicitud y la apruebe.</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 14px 36px; font-size: 1rem; font-weight: 700; background-color: #059669; border-color: #059669; border-radius: 8px; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);">
+                            + Enviar Solicitud de Cambio
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -556,6 +588,44 @@ document.addEventListener('DOMContentLoaded', function() {
     setupGoogleSearch('reemplazo_search', 'reemplazo_cedula', 'reemplazo_id', 'reemplazo_suggestions');
     setupGoogleSearch('reemplazo_search_2', 'reemplazo_cedula_2', 'reemplazo_id_2', 'reemplazo_suggestions_2');
 
+    // Lógica de restricciones de fechas (Devolución debe ser posterior a la fecha del turno a relevar)
+    const fechaTurnoInput = document.getElementById('fecha_turno');
+
+    function getNextDay(dateStr) {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return '';
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        d.setDate(d.getDate() + 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function actualizarRestriccionFechasDevolucion() {
+        if (!fechaTurnoInput) return;
+        const minDevDate = getNextDay(fechaTurnoInput.value);
+
+        [inputDev1FechaNormal, inputDev1FechaDiv, fechaDevolucion2].forEach(elem => {
+            if (elem) {
+                if (minDevDate) {
+                    elem.min = minDevDate;
+                } else {
+                    elem.removeAttribute('min');
+                }
+                if (elem.value && minDevDate && elem.value < minDevDate) {
+                    elem.value = '';
+                }
+            }
+        });
+    }
+
+    if (fechaTurnoInput) {
+        fechaTurnoInput.addEventListener('change', actualizarRestriccionFechasDevolucion);
+        fechaTurnoInput.addEventListener('input', actualizarRestriccionFechasDevolucion);
+    }
+
     // Validación antes de enviar el formulario
     const mainInput = document.getElementById('reemplazo_search');
     const mainCedula = document.getElementById('reemplazo_cedula');
@@ -566,17 +636,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 alert('Por favor selecciona una persona de las sugerencias del buscador del Paso 1.');
                 mainInput.focus();
+                return;
+            }
+
+            if (fechaTurnoInput && fechaTurnoInput.value) {
+                const minDevDate = getNextDay(fechaTurnoInput.value);
+                const activeDevDate = inputDev1FechaNormal && !inputDev1FechaNormal.disabled ? inputDev1FechaNormal.value : (inputDev1FechaDiv && !inputDev1FechaDiv.disabled ? inputDev1FechaDiv.value : '');
+
+                if (activeDevDate && minDevDate && activeDevDate < minDevDate) {
+                    e.preventDefault();
+                    alert('La fecha de devolución del turno debe ser posterior a la fecha del turno a relevar.');
+                    return;
+                }
+
+                if (fechaDevolucion2 && !fechaDevolucion2.disabled && fechaDevolucion2.value) {
+                    if (minDevDate && fechaDevolucion2.value < minDevDate) {
+                        e.preventDefault();
+                        alert('La fecha de la segunda devolución debe ser posterior a la fecha del turno a relevar.');
+                        return;
+                    }
+                }
             }
         });
     }
 
     // Lógica de equivalencia de tiempo y devolución dividida de 12 horas
     const jornadaHoras = {
-        'N': 12, 'C': 12,
-        'C1': 11, 'C2': 11,
-        'M': 6, 'T': 6, 'ME': 6, 'TE': 6,
-        'T9': 8, 'H': 8, 'LC': 8,
-        'D': 0, 'L': 0
+        'N': 12, 'C': 11,
+        'C1': 10, 'C2': 11,
+        'H': 8, 'N1': 11,
+        'M4': 4, 'M': 6, 'T': 6, 'ME': 6, 'TE': 6,
+        'T9': 8, 'LC': 8,
+        'LM': 0, 'D': 0, 'L': 0, 'V': 0
     };
 
     const jornadaSelect = document.getElementById('jornada');
@@ -690,6 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             filtrarSelectPorHoras(inputDev1JornadaNormal, horasTurno);
         }
+        actualizarRestriccionFechasDevolucion();
     }
 
     function filtrarSelectPorHoras(selectElem, targetHoras) {
@@ -719,6 +811,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (chkDividir12h) chkDividir12h.addEventListener('change', actualizarJornadasDisponibles);
 
     actualizarJornadasDisponibles();
+    actualizarRestriccionFechasDevolucion();
 });
 </script>
 {% endblock %}

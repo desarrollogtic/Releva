@@ -14,18 +14,17 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Cabecera de Administración de Área -->
+    <!-- Cabecera de Gestión de Área -->
     <div class="card" style="margin-bottom: 24px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
             <div>
                 <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a;">
                     Gestión por Área: <span style="color: #059669;">{{ area_activa.nombre }}</span>
                 </h1>
-                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de turnos, coordinadores y colaboradores del área</span>
+                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de tipos de jornadas y aprobación de solicitudes de cambio de turnos</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <!-- Selector si administra múltiples áreas -->
                 {% if areas_administradas|length > 1 or user.is_superuser %}
                     <form method="GET" action="{% url 'core:gestion_area' %}" style="display: flex; align-items: center; gap: 8px;">
                         <label for="area_id" style="font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0;">Área:</label>
@@ -36,225 +35,229 @@
                         </select>
                     </form>
                 {% endif %}
-
-                <!-- Botón Eliminar Área (Solo Superusuario) -->
-                {% if user.is_superuser and area_activa %}
-                    <form method="POST" action="{% url 'core:eliminar_area' area_activa.id %}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de ELIMINAR el área {{ area_activa.nombre }}?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 6px 12px; font-size: 0.85rem;">
-                            Eliminar Área
-                        </button>
-                    </form>
-                {% endif %}
             </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
             <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Coordinador(es) del Área</span>
-                <div style="font-weight: 600; color: #0f172a; margin-top: 4px; font-size: 0.95rem;">
-                    {% for adm in area_activa.administradores.all %}
-                        {{ adm.first_name|default:adm.username }}{% if not forloop.last %}, {% endif %}
-                    {% empty %}
-                        Sin coordinadores asignados
-                    {% endfor %}
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Jornadas Configuradas</span>
+                <div style="font-weight: 700; color: #0f172a; margin-top: 4px; font-size: 1.25rem;">
+                    {{ jornadas|length }}
                 </div>
             </div>
 
             <div style="background: #ecfdf5; padding: 12px 16px; border-radius: 8px; border: 1px solid #a7f3d0;">
-                <span style="font-size: 0.75rem; font-weight: 700; color: #047857; text-transform: uppercase;">Total Turnos Programados</span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #047857; text-transform: uppercase;">Solicitudes Pendientes</span>
                 <div style="font-weight: 700; color: #065f46; margin-top: 4px; font-size: 1.25rem;">
-                    {{ turnos_programados|length }}
+                    {{ recibidas_pendientes }}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SECCIÓN: GESTIÓN DE COORDINADORES DEL ÁREA -->
-    <div class="card" style="margin-bottom: 28px; background: #faf5ff; border: 1px solid #e9d5ff;">
-        <div style="margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #f3e8ff;">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: #6b21a8;">Coordinadores del Área ({{ area_activa.nombre }})</h2>
-            <span style="font-size: 0.85rem; color: #7e22ce;">Asigna o remueve administradores/coordinadores encargados de esta área</span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-            <!-- Lista de Coordinadores Actuales -->
-            <div>
-                <span style="font-size: 0.8rem; font-weight: 700; color: #6b21a8; text-transform: uppercase; display: block; margin-bottom: 8px;">Coordinadores Actuales</span>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    {% for adm in area_activa.administradores.all %}
-                        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 8px 14px; border-radius: 6px; border: 1px solid #e9d5ff;">
-                            <div>
-                                <strong style="font-size: 0.9rem; color: #0f172a;">{{ adm.first_name|default:adm.username }}</strong>
-                                <span style="font-size: 0.75rem; color: #64748b; display: block;">Cédula: {{ adm.username }}</span>
-                            </div>
-                            <form method="POST" action="{% url 'core:quitar_coordinador_area' area_activa.id adm.id %}" style="margin: 0;" onsubmit="return confirm('¿Quitar a {{ adm.first_name|default:adm.username }} como coordinador?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 2px 8px; font-size: 0.75rem;">
-                                    Quitar
-                                </button>
-                            </form>
-                        </div>
-                    {% empty %}
-                        <span style="font-size: 0.85rem; color: #7e22ce; font-style: italic;">No hay coordinadores asignados a esta área.</span>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Formulario para Agregar Coordinador -->
-            <div>
-                <span style="font-size: 0.8rem; font-weight: 700; color: #6b21a8; text-transform: uppercase; display: block; margin-bottom: 8px;">Asignar Nuevo Coordinador</span>
-                <form method="POST" action="{% url 'core:agregar_coordinador_area' %}" style="display: flex; flex-direction: column; gap: 10px;">
-                    {% csrf_token %}
-                    <input type="hidden" name="area_id" value="{{ area_activa.id }}" />
-                    
-                    <select name="coordinador_cedula" class="form-input" required style="font-size: 0.9rem;">
-                        <option value="">-- Seleccionar Persona --</option>
-                        {% for u in todos_los_usuarios %}
-                            <option value="{{ u.username }}">{{ u.first_name|default:u.username }} ({{ u.username }}) - {{ u.profile.cargo|default:'' }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <button type="submit" class="btn btn-primary" style="background-color: #7e22ce; border-color: #7e22ce; padding: 8px 16px; font-weight: 600; font-size: 0.9rem;">
-                        + Asignar Coordinador
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECCIÓN SOLO SUPERUSUARIO: CREAR NUEVA ÁREA -->
-    {% if user.is_superuser %}
-        <div class="card" style="margin-bottom: 28px; background: #f0f9ff; border: 1px solid #bae6fd;">
-            <div style="margin-bottom: 12px;">
-                <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: #0369a1;">Crear Nueva Área en el Sistema</h2>
-                <span style="font-size: 0.85rem; color: #0284c7;">Permite registrar un área nueva para asignarle coordinadores y turnos</span>
-            </div>
-
-            <form method="POST" action="{% url 'core:crear_area' %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: end;">
-                {% csrf_token %}
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label for="nombre_area_nueva" style="font-weight: 600; color: #0369a1;">Nombre del Área</label>
-                    <input type="text" name="nombre" id="nombre_area_nueva" class="form-input" placeholder="Ej. Radiología / UCI Adultos..." required />
-                </div>
-
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label for="desc_area_nueva" style="font-weight: 600; color: #0369a1;">Descripción (Opcional)</label>
-                    <input type="text" name="descripcion" id="desc_area_nueva" class="form-input" placeholder="Descripción breve..." />
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="background-color: #0284c7; border-color: #0284c7; padding: 10px 20px; font-weight: 600; height: 42px;">
-                    + Crear Área
-                </button>
-            </form>
-        </div>
-    {% endif %}
-
-    <!-- Formulario para Asignar / Programar Nuevo Turno -->
+    <!-- SECCIÓN 1: SOLICITUDES DE CAMBIO DE JORNADAS ENTRE EMPLEADOS -->
     <div class="card" style="margin-bottom: 28px; border-top: 4px solid #059669;">
-        <div style="margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">Programar Nuevo Turno para el Área</h2>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Asigna una jornada a un empleado de <strong>{{ area_activa.nombre }}</strong></span>
-        </div>
-
-        <form method="POST" action="{% url 'core:asignar_turno_area' %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: end;">
-            {% csrf_token %}
-            <input type="hidden" name="area_id" value="{{ area_activa.id }}" />
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="empleado_cedula" style="font-weight: 600;">Empleado (Cédula o Nombre)</label>
-                <select name="empleado_cedula" id="empleado_cedula" class="form-input" required>
-                    <option value="">-- Seleccionar Empleado --</option>
-                    {% for emp in empleados %}
-                        <option value="{{ emp.username }}">{{ emp.first_name|default:emp.username }} ({{ emp.username }}) - {{ emp.profile.cargo|default:'' }}</option>
-                    {% empty %}
-                        {% for u in todos_los_usuarios %}
-                            <option value="{{ u.username }}">{{ u.first_name|default:u.username }} ({{ u.username }})</option>
-                        {% endfor %}
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="fecha_turno" style="font-weight: 600;">Fecha del Turno</label>
-                <input type="date" name="fecha_turno" id="fecha_turno" class="form-input" required />
-            </div>
-
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="jornada" style="font-weight: 600;">Jornada a Asignar</label>
-                <select name="jornada" id="jornada" class="form-input" required>
-                    {% for val, label in jornada_choices %}
-                        <option value="{{ val }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="background-color: #059669; padding: 10px 20px; font-weight: 600; height: 42px;">
-                + Programar Turno
-            </button>
-        </form>
-    </div>
-
-    <!-- Tabla de Programación de Turnos del Área -->
-    <div class="card">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
             <div>
-                <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: #0f172a;">Programación de Turnos Registrados</h2>
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Listado de turnos asignados a colaboradores del área</span>
+                <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0; color: #0f172a;">Solicitudes de Cambios de Jornada Recibidas</h2>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Peticiones enviadas por los colaboradores del área para su revisión y autorización</span>
             </div>
-            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 0.85rem; padding: 6px 12px;">
-                {{ turnos_programados|length }} turnos
+            <span class="badge" style="background: #ecfdf5; color: #047857; font-size: 0.85rem; padding: 6px 12px; font-weight: 700;">
+                {{ recibidas_pendientes }} pendientes
             </span>
         </div>
 
-        {% if turnos_programados %}
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
-                            <th style="padding: 12px 14px; font-weight: 700; color: #475569;">Empleado</th>
-                            <th style="padding: 12px 14px; font-weight: 700; color: #475569;">Cédula</th>
-                            <th style="padding: 12px 14px; font-weight: 700; color: #475569;">Fecha</th>
-                            <th style="padding: 12px 14px; font-weight: 700; color: #475569;">Jornada Asignada</th>
-                            <th style="padding: 12px 14px; font-weight: 700; color: #475569; text-align: center;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for t in turnos_programados %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 12px 14px; font-weight: 600; color: #0f172a;">
-                                    {{ t.usuario.first_name|default:t.usuario.username }}
-                                </td>
-                                <td style="padding: 12px 14px; color: var(--text-muted);">
-                                    {{ t.usuario.username }}
-                                </td>
-                                <td style="padding: 12px 14px; font-weight: 600; color: #2563eb;">
-                                    {{ t.fecha|date:"d/m/Y" }}
-                                </td>
-                                <td style="padding: 12px 14px;">
-                                    <span class="badge" style="background: #eff6ff; color: #1e40af; font-size: 0.85rem;">
-                                        {{ t.get_jornada_display }}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px 14px; text-align: center;">
-                                    <form method="POST" action="{% url 'core:eliminar_turno_area' t.pk %}" style="display: inline;" onsubmit="return confirm('¿Deseas eliminar este turno programado?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 4px 10px; font-size: 0.8rem;">
-                                            Eliminar
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {% if solicitudes_recibidas %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                {% for s in solicitudes_recibidas %}
+                    <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                <div>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Solicitante</span>
+                                    <strong style="font-size: 1.05rem; color: #0f172a; display: block;">
+                                        {{ s.solicitante.first_name|default:s.solicitante.username }}
+                                    </strong>
+                                </div>
+                                {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e; font-weight: 700;">Pendiente Compañero</span>
+                                {% elif s.estado == 'PENDIENTE_COORDINADOR' %}
+                                    <span class="badge" style="background: #fed7aa; color: #9a3412; font-weight: 700;">Pendiente Coordinador</span>
+                                {% elif s.estado == 'PENDIENTE_GH' %}
+                                    <span class="badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700;">Pendiente Gestión Humana</span>
+                                {% elif s.estado == 'ACEPTADA' %}
+                                    <span class="badge" style="background: #dcfce7; color: #166534; font-weight: 700;">Aprobada</span>
+                                {% elif s.estado == 'RECHAZADA' %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b; font-weight: 700;">Rechazada</span>
+                                {% else %}
+                                    <span class="badge" style="background: #f1f5f9; color: #475569;">Cancelada</span>
+                                {% endif %}
+                            </div>
+
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; background: #f8fafc; padding: 8px 12px; border-radius: 6px;">
+                                <strong>Reemplazo (Cubre):</strong> {{ s.reemplazo.first_name|default:s.reemplazo.username }} (Cédula: {{ s.reemplazo.username }})<br>
+                                <span style="font-size: 0.78rem; color: #94a3b8;">Solicitado el: {{ s.fecha_solicitud|date:"d/m/Y H:i" }}</span>
+                            </p>
+
+                            <div style="font-size: 0.9rem; background: #ffffff; padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color); line-height: 1.6;">
+                                <div style="margin-bottom: 6px;">
+                                    <span style="color: #2563eb; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Turno a Relevar</span>
+                                    <strong>Fecha:</strong> {{ s.fecha_turno|date:"d/m/Y" }} <br>
+                                    <strong>Jornada:</strong> {{ s.get_jornada_display }}
+                                </div>
+                                <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 8px 0;" />
+                                <div>
+                                    <span style="color: #059669; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; display: block;">Devolución del Turno</span>
+                                    <strong>Fecha 1:</strong> {{ s.fecha_devolucion|date:"d/m/Y" }} <br>
+                                    <strong>Jornada 1:</strong> {{ s.get_jornada_devolucion_display }}
+                                    {% if s.reemplazo_2 and s.reemplazo_2 != s.reemplazo %}
+                                        <br><span style="color: #2563eb; font-weight: 600;">Devolución a:</span> {{ s.reemplazo.first_name|default:s.reemplazo.username }}
+                                    {% endif %}
+                                    {% if s.jornada_devolucion_2 %}
+                                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                                            <strong>Fecha 2:</strong> {{ s.fecha_devolucion_2|date:"d/m/Y" }} <br>
+                                            <strong>Jornada 2:</strong> {{ s.get_jornada_devolucion_2_display }}
+                                            {% if s.reemplazo_2 and s.reemplazo_2 != s.reemplazo %}
+                                                <br><span style="color: #2563eb; font-weight: 600;">Devolución a:</span> {{ s.reemplazo_2.first_name|default:s.reemplazo_2.username }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if s.motivo %}
+                                    <div style="margin-top: 10px; font-style: italic; color: #475569; font-size: 0.85rem; background: #f1f5f9; padding: 6px 10px; border-radius: 4px;">
+                                        "{{ s.motivo }}"
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if s.estado == 'PENDIENTE' or s.estado == 'PENDIENTE_REEMPLAZO' %}
+                            {% if user == s.reemplazo or user == s.reemplazo_2 or is_gh %}
+                                <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
+                                    {% csrf_token %}
+                                    <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                        ✓ Aceptar Reemplazo
+                                    </button>
+                                    <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                        ✕ Rechazar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% elif s.estado == 'PENDIENTE_COORDINADOR' %}
+                            {% if user == s.coordinador or user.profile.es_admin_area or is_gh %}
+                                <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
+                                    {% csrf_token %}
+                                    <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                        ✓ Aprobar (Enviar a GH)
+                                    </button>
+                                    <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                        ✕ Rechazar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% elif s.estado == 'PENDIENTE_GH' and is_gh %}
+                            <form method="POST" action="{% url 'core:responder_solicitud' s.pk %}" style="display: flex; gap: 12px; margin-top: 10px;">
+                                {% csrf_token %}
+                                <button type="submit" name="accion" value="aceptar" class="btn btn-primary" style="background-color: #16a34a; border-color: #16a34a; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                    ✓ Aprobar Definitivamente
+                                </button>
+                                <button type="submit" name="accion" value="rechazar" class="btn" style="background-color: #dc2626; border-color: #dc2626; color: #ffffff; flex: 1; padding: 12px 16px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.25);">
+                                    ✕ Rechazar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
         {% else %}
             <p style="font-size: 0.95rem; color: var(--text-muted); text-align: center; padding: 36px 0;">
-                No hay turnos programados en esta área por el momento. ¡Utiliza el formulario superior para asignar turnos!
+                No hay solicitudes de cambio de jornada pendientes en este momento.
             </p>
         {% endif %}
     </div>
 
+    <!-- SECCIÓN 2: CREACIÓN Y CATÁLOGO DE JORNADAS -->
+    <div class="card" style="margin-bottom: 28px; border-top: 4px solid #2563eb;">
+        <div style="margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">Creación de Nuevas Jornadas / Turnos</h2>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Define los códigos y horarios de las jornadas de trabajo para los cambios de turno</span>
+        </div>
+
+        <form method="POST" action="{% url 'core:crear_jornada' %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="jornada_codigo" style="font-weight: 600;">Código (Ej. N, C, C1, N1...)</label>
+                <input type="text" name="codigo" id="jornada_codigo" class="form-input" placeholder="Ej. N2" required />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                <label for="jornada_descripcion" style="font-weight: 600;">Horario / Descripción</label>
+                <input type="text" name="descripcion" id="jornada_descripcion" class="form-input" placeholder="Ej. DE 06:00 P.M A 06:00 A.M (NOCHE 12H)" required />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="jornada_tipo" style="font-weight: 600;">Tipo de Jornada</label>
+                <input type="text" name="tipo" id="jornada_tipo" class="form-input" placeholder="Ej. NOCHE, CORRIDO..." />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="jornada_horas" style="font-weight: 600;">Horas Equivalentes</label>
+                <input type="number" name="horas" id="jornada_horas" class="form-input" placeholder="Ej. 12" min="0" max="24" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="background-color: #2563eb; border-color: #2563eb; padding: 10px 20px; font-weight: 600; height: 42px;">
+                + Crear Jornada
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #0f172a;">Catálogo de Jornadas Registradas</h3>
+            
+            {% if jornadas %}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Código</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Horario / Descripción</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Tipo</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Horas</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for j in jornadas %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 10px 12px; font-weight: 700; color: #2563eb;">
+                                        {{ j.codigo }}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: #0f172a;">
+                                        {{ j.descripcion }}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--text-muted);">
+                                        {{ j.tipo|default:"-" }}
+                                    </td>
+                                    <td style="padding: 10px 12px; font-weight: 600;">
+                                        {{ j.horas }} HRS
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: center;">
+                                        <form method="POST" action="{% url 'core:eliminar_jornada' j.pk %}" style="display: inline;" onsubmit="return confirm('¿Deseas eliminar la jornada {{ j.codigo }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 2px 8px; font-size: 0.78rem;">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}
+
