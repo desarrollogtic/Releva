@@ -23,16 +23,23 @@
 
             {% if user.is_authenticated %}
                 <nav class="nav-menu" style="display: flex; align-items: center; gap: 20px;">
-                    <a href="{% url 'core:home' %}" class="nav-link">Inicio</a>
-                    <a href="{% url 'core:solicitudes_recibidas' %}" class="nav-link {% if navbar_recibidas_pendientes > 0 %}nav-link-pulse-alert{% endif %}">
-                        Solicitudes Recibidas
-                        {% if navbar_recibidas_pendientes > 0 %}
-                            <span class="pulse-dot-indicator"></span>
-                        {% endif %}
-                    </a>
-                    <a href="{% url 'core:solicitudes_enviadas' %}" class="nav-link">Solicitudes Enviadas</a>
                     {% if user.profile.es_admin_area %}
+                        <a href="{% url 'core:solicitudes_recibidas' %}" class="nav-link {% if navbar_recibidas_pendientes > 0 %}nav-link-pulse-alert{% endif %}">
+                            Solicitudes Recibidas
+                            {% if navbar_recibidas_pendientes > 0 %}
+                                <span class="pulse-dot-indicator"></span>
+                            {% endif %}
+                        </a>
                         <a href="{% url 'core:gestion_area' %}" class="nav-link" style="color: #059669; font-weight: 700;">Gestión de Área</a>
+                    {% else %}
+                        <a href="{% url 'core:home' %}" class="nav-link">Inicio</a>
+                        <a href="{% url 'core:solicitudes_recibidas' %}" class="nav-link {% if navbar_recibidas_pendientes > 0 %}nav-link-pulse-alert{% endif %}">
+                            Solicitudes Recibidas
+                            {% if navbar_recibidas_pendientes > 0 %}
+                                <span class="pulse-dot-indicator"></span>
+                            {% endif %}
+                        </a>
+                        <a href="{% url 'core:solicitudes_enviadas' %}" class="nav-link">Solicitudes Enviadas</a>
                     {% endif %}
                 </nav>
 

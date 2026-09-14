@@ -47,9 +47,9 @@
             </div>
 
             <div class="form-group">
-                <label for="area_id">Área de Desempeño</label>
+                <label for="area_id">Área de Desempeño <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(Opcional para coordinadores)</span></label>
                 <select name="area_id" id="area_id" class="form-input">
-                    <option value="">-- Selecciona tu Área --</option>
+                    <option value="">-- Selecciona tu Área (Opcional) --</option>
                     {% for a in areas %}
                         <option value="{{ a.id }}">{{ a.nombre }}</option>
                     {% endfor %}

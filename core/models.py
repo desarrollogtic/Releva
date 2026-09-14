@@ -27,6 +27,8 @@ class Profile(models.Model):
     def es_admin_area(self):
         if self.user.is_superuser or self.user.username == '1102830559':
             return True
+        if self.cargo and 'coordinador' in self.cargo.lower():
+            return True
         return self.user.areas_administradas.exists()
 
 
