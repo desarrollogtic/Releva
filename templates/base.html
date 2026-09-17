@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=1.5">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2.0">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -43,7 +43,19 @@
                     {% endif %}
                 </nav>
 
-                <div class="nav-user">
+                <div class="nav-user" style="display: flex; align-items: center; gap: 10px;">
+                    <a href="{% url 'core:notificaciones' %}" class="btn btn-outline nav-btn-action" title="Configurar correo de notificaciones" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <span>Notificaciones</span>
+                    </a>
+                    <a href="{% url 'core:cambiar_password' %}" class="btn btn-outline nav-btn-action" title="Cambiar Contraseña" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span>Cambiar Contraseña</span>
+                    </a>
                     <a href="{% url 'core:logout' %}" class="btn btn-outline">Cerrar Sesión</a>
                 </div>
             {% endif %}
@@ -57,8 +69,19 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container">
-            &copy; 2026 Releva. Todos los derechos reservados.
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <span class="logo-badge">R</span>
+                    <span class="footer-brand-title">Releva</span>
+                </div>
+                <p class="footer-tagline">Plataforma de gestión y autorización de cambios de turnos laborales.</p>
+            </div>
+            
+            <div class="footer-copy">
+                <p>&copy; 2026 <strong>Releva</strong>. Todos los derechos reservados.</p>
+                <p class="footer-subtext">Sistema integral de relevo de personal y control de jornadas.</p>
+            </div>
         </div>
     </footer>
 

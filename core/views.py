@@ -5,7 +5,7 @@ import time
 import django
 from datetime import datetime
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -15,6 +15,22 @@ from django.middleware.csrf import get_token
 from django.contrib import messages
 from .models import Profile, SolicitudCambio, Area, TurnoArea
 from .backends import fetch_and_sync_sisma_user
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.urls import reverse
+from .notifications import (
+    notificar_nueva_solicitud,
+    notificar_aprobacion_reemplazo,
+    notificar_aprobacion_coordinador,
+    notificar_aprobacion_gh,
+    notificar_rechazo,
+    notificar_cancelacion,
+    _enviar_correo,
+    _generar_plantilla_html,
+    _get_user_display_name
+)
+
 
 _CONTRATOS_CACHE = []
 _CONTRATOS_CACHE_TIME = 0
@@ -312,7 +328,7 @@ def crear_solicitud(request):
         )
         return redirect('core:home')
 
-    SolicitudCambio.objects.create(
+    solicitud = SolicitudCambio.objects.create(
         solicitante=request.user,
         reemplazo=reemplazo,
         reemplazo_2=reemplazo_2,
@@ -326,6 +342,9 @@ def crear_solicitud(request):
         motivo=motivo,
         estado='PENDIENTE_REEMPLAZO'
     )
+
+    # Notificación automática por correo
+    notificar_nueva_solicitud(solicitud)
 
     reemplazo_nombre = reemplazo.first_name or reemplazo.username
     if reemplazo_2 and reemplazo_2 != reemplazo:
@@ -367,6 +386,7 @@ def responder_solicitud(request, pk):
 
             solicitud.estado = 'PENDIENTE_COORDINADOR'
             solicitud.save()
+            notificar_aprobacion_reemplazo(solicitud)
             messages.success(
                 request, 
                 f'Has ACEPTADO el reemplazo de turno de {solicitante_nombre}. '
@@ -386,6 +406,7 @@ def responder_solicitud(request, pk):
 
             solicitud.estado = 'PENDIENTE_GH'
             solicitud.save()
+            notificar_aprobacion_coordinador(solicitud)
             messages.success(
                 request, 
                 f'Has APROBADO la solicitud de {solicitante_nombre} en segunda instancia. '
@@ -400,6 +421,7 @@ def responder_solicitud(request, pk):
 
             solicitud.estado = 'ACEPTADA'
             solicitud.save()
+            notificar_aprobacion_gh(solicitud)
             messages.success(
                 request, 
                 f'Has APROBADO DEFINITIVAMENTE el cambio de turno de {solicitante_nombre}. '
@@ -409,6 +431,7 @@ def responder_solicitud(request, pk):
     elif accion == 'rechazar':
         solicitud.estado = 'RECHAZADA'
         solicitud.save()
+        notificar_rechazo(solicitud, actor=request.user)
         messages.info(request, f'Has RECHAZADO la solicitud de cambio de turno de {solicitante_nombre}.')
     else:
         messages.error(request, 'Acción no válida.')
@@ -427,11 +450,150 @@ def cancelar_solicitud(request, pk):
     if solicitud.estado in ['PENDIENTE', 'PENDIENTE_REEMPLAZO', 'PENDIENTE_COORDINADOR', 'PENDIENTE_GH']:
         solicitud.estado = 'CANCELADA'
         solicitud.save()
+        notificar_cancelacion(solicitud)
         messages.info(request, 'La solicitud de cambio de turno ha sido cancelada.')
     else:
         messages.warning(request, 'No se puede cancelar una solicitud que ya fue procesada definitivamente.')
 
     return redirect('core:solicitudes_enviadas')
+
+
+@login_required(login_url='core:login')
+def notificaciones_view(request):
+    """
+    Vista dedicada e independiente para gestionar el correo electrónico de notificaciones.
+    """
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        if not email or '@' not in email or '.' not in email:
+            messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+        else:
+            request.user.email = email
+            request.user.save()
+            messages.success(request, f'Correo de notificaciones guardado exitosamente: {email}')
+        return redirect('core:notificaciones')
+
+    return render(request, 'notificaciones.html', {'user': request.user})
+
+
+@login_required(login_url='core:login')
+def cambiar_password(request):
+    """
+    Vista dedicada e independiente para cambiar la contraseña de acceso.
+    """
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not old_password or not new_password or not confirm_password:
+            messages.error(request, 'Todos los campos son obligatorios para cambiar la contraseña.')
+        elif not request.user.check_password(old_password):
+            messages.error(request, 'La contraseña actual ingresada es incorrecta.')
+        elif new_password != confirm_password:
+            messages.error(request, 'La nueva contraseña y su confirmación no coinciden.')
+        elif len(new_password) < 4:
+            messages.error(request, 'La nueva contraseña debe tener al menos 4 caracteres.')
+        else:
+            request.user.set_password(new_password)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, 'Tu contraseña ha sido actualizada correctamente.')
+            return redirect('core:cambiar_password')
+
+    return render(request, 'cambiar_password.html')
+
+
+def recuperar_password_view(request):
+    """
+    Permite solicitar el restablecimiento de contraseña mediante el correo electrónico asociado.
+    """
+    if request.user.is_authenticated:
+        return redirect('core:home')
+
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        if not email or '@' not in email:
+            messages.error(request, 'Por favor ingresa un correo electrónico válido.')
+        else:
+            users = User.objects.filter(email__iexact=email)
+            if not users.exists():
+                users = User.objects.filter(username__iexact=email, email__isnull=False).exclude(email='')
+
+            if users.exists():
+                for user in users:
+                    if user.email:
+                        uid = urlsafe_base64_encode(force_bytes(user.pk))
+                        token = default_token_generator.make_token(user)
+                        reset_url = request.build_absolute_uri(
+                            reverse('core:restablecer_password', kwargs={'uidb64': uid, 'token': token})
+                        )
+
+                        solic_nombre = _get_user_display_name(user)
+                        titulo = "Instrucciones para Restablecer tu Contraseña"
+                        cuerpo = (
+                            f"Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>Releva</strong>.<br><br>"
+                            f"Haz clic en el siguiente botón para crear una nueva contraseña:<br><br>"
+                            f"<a href='{reset_url}' style='background-color: #2563eb; color: #ffffff; padding: 12px 24px; "
+                            f"text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;'>Restablecer mi Contraseña</a><br><br>"
+                            f"<span style='font-size: 13px; color: #64748b;'>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</span>"
+                        )
+                        html = _generar_plantilla_html(titulo, solic_nombre, cuerpo)
+                        _enviar_correo(
+                            user.email,
+                            "[Releva] Restablecimiento de Contraseña",
+                            f"Ingresa al siguiente enlace para restablecer tu contraseña: {reset_url}",
+                            html
+                        )
+
+            messages.success(
+                request, 
+                'Si el correo electrónico ingresado está registrado en el sistema, recibirás un mensaje con las instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada.'
+            )
+            return redirect('core:recuperar_password')
+
+    return render(request, 'recuperar_password.html')
+
+
+def restablecer_password_view(request, uidb64, token):
+    """
+    Vista para validar el token de recuperación e ingresar la nueva contraseña.
+    """
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    valid_link = (user is not None and default_token_generator.check_token(user, token))
+
+    if request.method == 'POST':
+        if not valid_link:
+            messages.error(request, 'El enlace de recuperación es inválido o ha expirado.')
+            return redirect('core:recuperar_password')
+
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not new_password or not confirm_password:
+            messages.error(request, 'Todos los campos son obligatorios.')
+        elif new_password != confirm_password:
+            messages.error(request, 'Las contraseñas ingresadas no coinciden.')
+        elif len(new_password) < 4:
+            messages.error(request, 'La nueva contraseña debe tener al menos 4 caracteres.')
+        else:
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, '¡Tu contraseña ha sido restablecida con éxito! Ya puedes iniciar sesión con tu nueva contraseña.')
+            return redirect('core:login')
+
+    context = {
+        'valid_link': valid_link,
+        'uidb64': uidb64,
+        'token': token,
+    }
+    return render(request, 'restablecer_password.html', context)
+
 
 
 def login_view(request):
@@ -457,11 +619,17 @@ def login_view(request):
                 user, profile = fetch_and_sync_sisma_user(username, password)
 
             if user is not None:
+                profile, _ = Profile.objects.get_or_create(user=user)
+                is_exento_area = profile.es_admin_area()
+
+                if not is_exento_area and not area_id:
+                    messages.error(request, 'Debes seleccionar tu Área de Desempeño para iniciar sesión.')
+                    return render(request, 'login.html', {'areas': areas})
+
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 if area_id and area_id.isdigit():
                     area_obj = Area.objects.filter(pk=area_id).first()
                     if area_obj:
-                        profile, _ = Profile.objects.get_or_create(user=user)
                         profile.area = area_obj
                         profile.save()
 
@@ -498,9 +666,6 @@ def ensure_default_jornadas():
 
 @login_required(login_url='core:login')
 def gestion_area_view(request):
-    """
-    Vista dedicada para la administración de jornadas y aprobación/rechazo de cambios de jornadas del área.
-    """
     profile, _ = Profile.objects.get_or_create(user=request.user)
     if not profile.es_admin_area():
         messages.error(request, 'No tienes permisos para acceder a la gestión de áreas.')
@@ -508,12 +673,19 @@ def gestion_area_view(request):
 
     ensure_default_jornadas()
 
-    if request.user.is_superuser:
+    is_admin_global = (
+        request.user.is_superuser or 
+        request.user.is_staff or 
+        request.user.username == '1102830559' or 
+        (profile.cargo and any(k in profile.cargo.lower() for k in ['admin', 'director', 'jefe', 'gestion humana', 'gestión humana']))
+    )
+
+    if is_admin_global:
         areas_administradas = Area.objects.all()
     else:
         areas_administradas = request.user.areas_administradas.all()
 
-    if not areas_administradas.exists():
+    if not areas_administradas.exists() and not is_admin_global:
         messages.warning(request, 'No tienes áreas asignadas bajo tu administración.')
         return redirect('core:home')
 
@@ -521,31 +693,20 @@ def gestion_area_view(request):
     area_activa = None
     if area_id and area_id.isdigit():
         area_activa = areas_administradas.filter(pk=area_id).first()
-    if not area_activa:
+    if not area_activa and areas_administradas.exists():
         area_activa = areas_administradas.first()
 
-    # Jornadas registradas
+    coordinadores = area_activa.administradores.all() if area_activa else []
     jornadas = Jornada.objects.all().order_by('codigo')
-
-    is_gh = (request.user.username == '1102830559' or request.user.is_superuser)
-    if is_gh:
-        solicitudes_recibidas = SolicitudCambio.objects.filter(
-            Q(estado='PENDIENTE_GH') | Q(coordinador=request.user) | Q(solicitante__profile__area=area_activa) | Q(reemplazo__profile__area=area_activa)
-        ).select_related('solicitante', 'solicitante__profile', 'reemplazo', 'reemplazo__profile', 'reemplazo_2', 'coordinador').distinct()
-        recibidas_pendientes = solicitudes_recibidas.filter(Q(estado='PENDIENTE_GH') | Q(estado='PENDIENTE')).count()
-    else:
-        solicitudes_recibidas = SolicitudCambio.objects.filter(
-            Q(coordinador=request.user) | Q(solicitante__profile__area=area_activa) | Q(reemplazo__profile__area=area_activa)
-        ).select_related('solicitante', 'solicitante__profile', 'reemplazo', 'reemplazo__profile', 'reemplazo_2', 'coordinador').distinct()
-        recibidas_pendientes = solicitudes_recibidas.filter(estado='PENDIENTE').count()
+    todas_las_areas = Area.objects.all()
 
     context = {
         'area_activa': area_activa,
         'areas_administradas': areas_administradas,
+        'todas_las_areas': todas_las_areas,
+        'coordinadores': coordinadores,
         'jornadas': jornadas,
-        'solicitudes_recibidas': solicitudes_recibidas,
-        'recibidas_pendientes': recibidas_pendientes,
-        'jornada_choices': SolicitudCambio.JORNADA_CHOICES,
+        'is_admin_global': is_admin_global,
     }
     return render(request, 'gestion_area.html', context)
 
@@ -688,10 +849,11 @@ def eliminar_turno_area(request, pk):
 @require_http_methods(["POST"])
 def crear_area(request):
     """
-    Permite al administrador principal crear una nueva área.
+    Permite al administrador crear una nueva área.
     """
-    if not request.user.is_superuser:
-        messages.error(request, 'Únicamente el administrador principal puede crear áreas.')
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if not request.user.is_superuser and not profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para crear áreas.')
         return redirect('core:gestion_area')
 
     nombre = request.POST.get('nombre', '').strip()
@@ -714,10 +876,11 @@ def crear_area(request):
 @require_http_methods(["POST"])
 def eliminar_area(request, pk):
     """
-    Permite al administrador principal eliminar un área existente.
+    Permite al administrador eliminar un área existente.
     """
-    if not request.user.is_superuser:
-        messages.error(request, 'Únicamente el administrador principal puede eliminar áreas.')
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if not request.user.is_superuser and not profile.es_admin_area():
+        messages.error(request, 'No tienes permisos para eliminar áreas.')
         return redirect('core:gestion_area')
 
     area = get_object_or_404(Area, pk=pk)

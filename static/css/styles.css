@@ -144,23 +144,42 @@ body {
     padding: 10px 16px;
 }
 
-/* Login Layout */
+/* Login Layout con imagen de fondo back.jpg */
 .login-page {
-    min-height: calc(100vh - 70px);
+    width: 100%;
+    min-height: calc(100vh - 135px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 50px 20px;
+    background: url('../image/back.jpg') no-repeat center top / cover;
+    position: relative;
+    margin: 0;
+}
+
+.login-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 1;
 }
 
 .login-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
     width: 100%;
-    max-width: 400px;
-    padding: 32px;
+    max-width: 420px;
+    padding: 36px 32px;
 }
 
 .login-header {
@@ -497,3 +516,156 @@ body {
     margin-left: 6px;
     vertical-align: middle;
 }
+
+/* Footer Global */
+.footer {
+    background-color: #0f172a;
+    color: #94a3b8;
+    border-top: 1px solid #1e293b;
+    padding: 22px 0;
+    margin-top: auto;
+    font-size: 0.875rem;
+}
+
+.footer-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #ffffff;
+}
+
+.footer-brand-title {
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.footer-tagline {
+    font-size: 0.825rem;
+    color: #64748b;
+    border-left: 1px solid #334155;
+    padding-left: 14px;
+}
+
+.footer-copy {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.footer-copy strong {
+    color: #ffffff;
+}
+
+.footer-subtext {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+    .footer-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .footer-brand {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .footer-tagline {
+        border-left: none;
+        padding-left: 0;
+    }
+    .footer-copy {
+        text-align: center;
+    }
+}
+
+/* Modales Interactivos (Notificaciones & Cambiar Contraseña) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeInModal 0.2s ease-out;
+}
+
+.modal-card {
+    background: var(--bg-surface);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    position: relative;
+    animation: slideUpModal 0.2s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 8px;
+    transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+    background: #f1f5f9;
+    color: var(--text-primary);
+}
+
+.nav-btn-action {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 6px;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUpModal {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+

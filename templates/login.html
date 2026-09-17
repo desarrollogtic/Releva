@@ -3,6 +3,11 @@
 {% block title %}Iniciar Sesión - Releva{% endblock %}
 
 {% block content %}
+<style>
+    .main-content {
+        padding: 0 !important;
+    }
+</style>
 <div class="login-page">
     <div class="login-card">
         <div class="login-header">
@@ -35,7 +40,10 @@
             </div>
 
             <div class="form-group">
-                <label for="password">Contraseña</label>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <label for="password" style="margin-bottom: 0;">Contraseña</label>
+                    <a href="{% url 'core:recuperar_password' %}" style="font-size: 0.825rem; color: #2563eb; text-decoration: none; font-weight: 600;">¿Olvidaste tu contraseña?</a>
+                </div>
                 <input 
                     type="password" 
                     id="password" 
@@ -46,10 +54,11 @@
                 />
             </div>
 
+
             <div class="form-group">
-                <label for="area_id">Área de Desempeño <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(Opcional para coordinadores)</span></label>
+                <label for="area_id">Área de Desempeño <span style="font-size: 0.8rem; color: #64748b; font-weight: 500;">(Requerido para empleados - Opcional para administradores)</span></label>
                 <select name="area_id" id="area_id" class="form-input">
-                    <option value="">-- Selecciona tu Área (Opcional) --</option>
+                    <option value="">-- Selecciona tu Área de Desempeño --</option>
                     {% for a in areas %}
                         <option value="{{ a.id }}">{{ a.nombre }}</option>
                     {% endfor %}

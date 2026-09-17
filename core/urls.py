@@ -7,6 +7,12 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
+    path('notificaciones/', views.notificaciones_view, name='notificaciones'),
+    path('recuperar-password/', views.recuperar_password_view, name='recuperar_password'),
+    path('restablecer-password/<uidb64>/<token>/', views.restablecer_password_view, name='restablecer_password'),
+
+
     
     # Solicitudes de Cambio de Turno
     path('solicitudes/recibidas/', views.solicitudes_recibidas_view, name='solicitudes_recibidas'),

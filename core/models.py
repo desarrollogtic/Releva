@@ -25,11 +25,15 @@ class Profile(models.Model):
         return f"Perfil de {self.user.first_name or self.user.username}"
 
     def es_admin_area(self):
-        if self.user.is_superuser or self.user.username == '1102830559':
+        if self.user.is_superuser or self.user.is_staff or self.user.username == '1102830559' or self.user.username.lower() in ['admin', 'administrador']:
             return True
-        if self.cargo and 'coordinador' in self.cargo.lower():
-            return True
+        if self.cargo:
+            cargo_lower = self.cargo.lower()
+            keywords = ['coordinador', 'admin', 'director', 'jefe', 'gerente', 'lider', 'líder', 'gestion humana', 'gestión humana']
+            if any(k in cargo_lower for k in keywords):
+                return True
         return self.user.areas_administradas.exists()
+
 
 
 class SolicitudCambio(models.Model):

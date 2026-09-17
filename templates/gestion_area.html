@@ -8,7 +8,7 @@
     <!-- Mensajes y Alertas -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert-box alert-{{ message.tags|default:'info' }}">
+            <div class="alert-box alert-{{ message.tags|default:'info' }}" style="margin-bottom: 20px;">
                 <span>{{ message }}</span>
             </div>
         {% endfor %}
@@ -19,18 +19,18 @@
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
             <div>
                 <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a;">
-                    Gestión por Área: <span style="color: #059669;">{{ area_activa.nombre }}</span>
+                    Gestión por Área: <span style="color: #059669;">{% if area_activa %}{{ area_activa.nombre }}{% else %}Sin Área Seleccionada{% endif %}</span>
                 </h1>
-                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de tipos de jornadas y aprobación de solicitudes de cambio de turnos</span>
+                <span style="font-size: 0.875rem; color: var(--text-muted);">Administración de áreas, asignación de coordinadores y definición de jornadas laborales</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                {% if areas_administradas|length > 1 or user.is_superuser %}
+                {% if areas_administradas %}
                     <form method="GET" action="{% url 'core:gestion_area' %}" style="display: flex; align-items: center; gap: 8px;">
-                        <label for="area_id" style="font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0;">Área:</label>
+                        <label for="area_id" style="font-size: 0.85rem; font-weight: 600; color: #475569; margin: 0;">Área Activa:</label>
                         <select name="area_id" id="area_id" class="form-input" style="padding: 6px 12px; font-size: 0.9rem;" onchange="this.form.submit()">
                             {% for a in areas_administradas %}
-                                <option value="{{ a.id }}" {% if a.id == area_activa.id %}selected{% endif %}>{{ a.nombre }}</option>
+                                <option value="{{ a.id }}" {% if area_activa and a.id == area_activa.id %}selected{% endif %}>{{ a.nombre }}</option>
                             {% endfor %}
                         </select>
                     </form>
@@ -40,15 +40,164 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
             <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Jornadas Configuradas</span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total de Áreas</span>
                 <div style="font-weight: 700; color: #0f172a; margin-top: 4px; font-size: 1.25rem;">
+                    {{ todas_las_areas|length }}
+                </div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Coordinadores del Área</span>
+                <div style="font-weight: 700; color: #059669; margin-top: 4px; font-size: 1.25rem;">
+                    {{ coordinadores|length }}
+                </div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Jornadas Configuradas</span>
+                <div style="font-weight: 700; color: #2563eb; margin-top: 4px; font-size: 1.25rem;">
                     {{ jornadas|length }}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SECCIÓN 2: CREACIÓN Y CATÁLOGO DE JORNADAS -->
+    <!-- SECCIÓN 1: CREACIÓN Y GESTIÓN DE ÁREAS -->
+    <div class="card" style="margin-bottom: 28px; border-top: 4px solid #059669;">
+        <div style="margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">Creación y Administración de Áreas</h2>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Crea nuevas áreas de desempeño para la organización y gestiona las existentes</span>
+        </div>
+
+        <form method="POST" action="{% url 'core:crear_area' %}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: end;">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="area_nombre" style="font-weight: 600;">Nombre del Área</label>
+                <input type="text" name="nombre" id="area_nombre" class="form-input" placeholder="Ej. Urgencias, UCI, Sistemas..." required />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                <label for="area_descripcion" style="font-weight: 600;">Descripción (Opcional)</label>
+                <input type="text" name="descripcion" id="area_descripcion" class="form-input" placeholder="Ej. Departamento de Atención Médica de Urgencias" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="background-color: #059669; border-color: #059669; padding: 10px 20px; font-weight: 600; height: 42px;">
+                + Crear Área
+            </button>
+        </form>
+
+        {% if todas_las_areas %}
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #0f172a;">Áreas Registradas en el Sistema</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Área</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Descripción</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Coordinadores</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in todas_las_areas %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 10px 12px; font-weight: 700; color: #059669;">
+                                        <a href="?area_id={{ a.id }}" style="color: inherit; text-decoration: underline;">{{ a.nombre }}</a>
+                                    </td>
+                                    <td style="padding: 10px 12px; color: #0f172a;">
+                                        {{ a.descripcion|default:"Sin descripción" }}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--text-muted);">
+                                        {{ a.administradores.count }} coordinador(es)
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: center;">
+                                        <form method="POST" action="{% url 'core:eliminar_area' a.pk %}" style="display: inline;" onsubmit="return confirm('¿Deseas eliminar el área {{ a.nombre }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 2px 8px; font-size: 0.78rem;">
+                                                Eliminar Área
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECCIÓN 2: ASIGNACIÓN DE COORDINADORES AL ÁREA ACTIVA -->
+    {% if area_activa %}
+    <div class="card" style="margin-bottom: 28px; border-top: 4px solid #7c3aed;">
+        <div style="margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+            <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">
+                Asignación de Coordinadores a <span style="color: #7c3aed;">{{ area_activa.nombre }}</span>
+            </h2>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Asigna empleados como coordinadores o administradores encargados de gestionar los turnos de esta área</span>
+        </div>
+
+        <form method="POST" action="{% url 'core:agregar_coordinador_area' %}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            {% csrf_token %}
+            <input type="hidden" name="area_id" value="{{ area_activa.id }}">
+
+            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 260px;">
+                <label for="coordinador_cedula" style="font-weight: 600;">Cédula o Usuario del Coordinador</label>
+                <input type="text" name="coordinador_cedula" id="coordinador_cedula" class="form-input" placeholder="Ingresa la cédula del coordinador" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="background-color: #7c3aed; border-color: #7c3aed; padding: 10px 20px; font-weight: 600; height: 42px;">
+                + Asignar Coordinador
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #0f172a;">Coordinadores Asignados Actualmente</h3>
+
+            {% if coordinadores %}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color);">
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Cédula / Usuario</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Nombre Completo</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569;">Cargo</th>
+                                <th style="padding: 10px 12px; font-weight: 700; color: #475569; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in coordinadores %}
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 10px 12px; font-weight: 700; color: #7c3aed;">
+                                        {{ c.username }}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: #0f172a;">
+                                        {{ c.first_name|default:c.username }}
+                                    </td>
+                                    <td style="padding: 10px 12px; color: var(--text-muted);">
+                                        {{ c.profile.cargo|default:"Coordinador" }}
+                                    </td>
+                                    <td style="padding: 10px 12px; text-align: center;">
+                                        <form method="POST" action="{% url 'core:quitar_coordinador_area' area_activa.id c.id %}" style="display: inline;" onsubmit="return confirm('¿Quitar a {{ c.first_name|default:c.username }} como coordinador de {{ area_activa.nombre }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline" style="color: #dc2626; border-color: #fca5a5; padding: 2px 8px; font-size: 0.78rem;">
+                                                Quitar Coordinador
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-muted); font-style: italic; margin: 0;">No hay coordinadores asignados aún a esta área.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SECCIÓN 3: CREACIÓN Y CATÁLOGO DE JORNADAS -->
     <div class="card" style="margin-bottom: 28px; border-top: 4px solid #2563eb;">
         <div style="margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
             <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #0f172a;">Creación de Nuevas Jornadas / Turnos</h2>
@@ -132,4 +281,3 @@
 
 </div>
 {% endblock %}
-
